@@ -1,139 +1,291 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm, useFieldArray } from "react-hook-form";
 import { productApi, categoryApi } from "../../api/index.js";
-import { Button, Card, Table, Pagination, Input, Modal, ConfirmModal, Badge, Select } from "../../components/ui/index.jsx";
-import { Plus, Pencil, Trash2, Search, AlertTriangle, PlusCircle, MinusCircle } from "lucide-react";
-import toast from "react-hot-toast";
 import { useAuthStore } from "../../stores/authStore.js";
+import AddProductDrawer from "../../components/inventory/AddProductDrawer.jsx";
+import { Search, Upload, Download, Plus, LayoutList, LayoutGrid, Pencil, Trash2, AlertTriangle } from "lucide-react";
+import toast from "react-hot-toast";
 
+// ─── helpers ───────────────────────────────────────────────────
+function getAttr(product, key) {
+  return product.attributes?.find(a => a.key === key)?.value || "";
+}
+
+function stockStatus(product) {
+  if (product.stock === 0) return { tone: "danger", label: "Out of stock" };
+  if (product.stock <= product.reorderLevel) return { tone: "warning", label: "Low stock" };
+  return { tone: "success", label: "In stock" };
+}
+
+function fmtINR(n) {
+  const num = parseFloat(n);
+  if (isNaN(num)) return "—";
+  return "₹" + num.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+}
+
+const TONE_PILL = {
+  success: "bg-emerald-50 text-emerald-700",
+  warning: "bg-amber-50 text-amber-700",
+  danger: "bg-red-50 text-red-700",
+};
+const TONE_DOT = {
+  success: "bg-emerald-500",
+  warning: "bg-amber-500",
+  danger: "bg-red-500",
+};
+const TONE_STOCK = {
+  success: "text-gray-900",
+  warning: "text-amber-600 font-semibold",
+  danger: "text-red-600 font-semibold",
+};
+
+// ─── component ─────────────────────────────────────────────────
 export default function ProductsPage() {
   const qc = useQueryClient();
   const { isAdmin, organization } = useAuthStore();
-  const sym = organization?.currencySymbol || "₹";
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [lowStock, setLowStock] = useState(false);
-  const [modal, setModal] = useState(null);
-  const [confirm, setConfirm] = useState(null);
-  const { register, handleSubmit, reset, control, formState: { errors } } = useForm();
-  const { fields: attrs, append: appendAttr, remove: removeAttr } = useFieldArray({ control, name: "attributes" });
+  const [catFilter, setCatFilter] = useState("all");
+  const [view, setView] = useState("table"); // "table" | "grid"
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editProduct, setEditProduct] = useState(null);
 
-  const { data: catData } = useQuery({ queryKey: ["categories-all"], queryFn: () => categoryApi.list({ limit: 100 }) });
+  const { data: catData } = useQuery({
+    queryKey: ["categories-all"],
+    queryFn: () => categoryApi.list({ limit: 100 }),
+  });
   const categories = catData?.data || [];
 
   const { data, isLoading } = useQuery({
-    queryKey: ["products", page, search, lowStock],
-    queryFn: () => productApi.list({ page, limit: 20, search, lowStock }),
+    queryKey: ["products", page, search, catFilter],
+    queryFn: () => productApi.list({
+      page,
+      limit: 20,
+      search,
+      categoryId: catFilter !== "all" ? catFilter : undefined,
+    }),
   });
 
-  const mutation = useMutation({
-    mutationFn: (d) => modal?.data?.id ? productApi.update(modal.data.id, d) : productApi.create(d),
-    onSuccess: () => { qc.invalidateQueries(["products"]); toast.success("Saved!"); setModal(null); reset(); },
-    onError: (e) => toast.error(e.response?.data?.message || "Error"),
-  });
   const deleteMutation = useMutation({
     mutationFn: (id) => productApi.delete(id),
-    onSuccess: () => { qc.invalidateQueries(["products"]); toast.success("Deleted"); setConfirm(null); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["products"] }); toast.success("Deleted"); },
     onError: (e) => toast.error(e.response?.data?.message || "Error"),
   });
 
-  const openEdit = (row) => {
-    reset({ name: row.name, sku: row.sku, barcode: row.barcode, categoryId: row.categoryId?.id || row.categoryId, description: row.description, unit: row.unit, stock: row.stock, reorderLevel: row.reorderLevel, purchasePrice: row.purchasePrice, sellingPrice: row.sellingPrice, taxPercent: row.taxPercent, attributes: row.attributes || [] });
-    setModal({ mode: "edit", data: row });
-  };
-
   const rows = data?.data || [];
+  const totalDocs = data?.meta?.totalDocs || 0;
   const totalPages = data?.meta?.totalPages || 1;
 
-  const columns = [
-    { header: "Product", render: r => (
-      <div>
-        <p className="font-medium text-gray-900">{r.name}</p>
-        {r.sku && <p className="text-xs text-gray-400">SKU: {r.sku}</p>}
-      </div>
-    )},
-    { header: "Category", render: r => r.categoryId?.name || "—" },
-    { header: "Stock", render: r => (
-      <div className="flex items-center gap-1.5">
-        {r.stock <= r.reorderLevel && <AlertTriangle size={13} className="text-orange-500" />}
-        <span className={r.stock <= r.reorderLevel ? "text-orange-600 font-semibold" : ""}>{r.stock} {r.unit}</span>
-      </div>
-    )},
-    { header: "Buy Price", render: r => `${sym}${r.purchasePrice}` },
-    { header: "Sell Price", render: r => `${sym}${r.sellingPrice}` },
-    { header: "Status", render: r => <Badge color={r.isActive ? "green" : "red"}>{r.isActive ? "Active" : "Inactive"}</Badge> },
-    { header: "", cellClassName: "text-right", render: r => isAdmin() ? (
-      <div className="flex justify-end gap-2">
-        <Button variant="ghost" size="sm" onClick={() => openEdit(r)}><Pencil size={13} /></Button>
-        <Button variant="ghost" size="sm" className="text-red-500 hover:bg-red-50" onClick={() => setConfirm(r)}><Trash2 size={13} /></Button>
-      </div>
-    ) : null },
-  ];
+  const openAdd = () => { setEditProduct(null); setDrawerOpen(true); };
+  const openEdit = (p) => { setEditProduct(p); setDrawerOpen(true); };
+
+  const handleDelete = (p) => {
+    if (!window.confirm(`Delete "${p.name}"?`)) return;
+    deleteMutation.mutate(p.id);
+  };
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div><h1 className="text-xl font-bold text-gray-900">Products</h1><p className="text-sm text-gray-500">Manage your product catalog</p></div>
-        {isAdmin() && <Button onClick={() => { reset({ unit: "pcs", reorderLevel: 10, taxPercent: 0, attributes: [] }); setModal({ mode: "add" }); }}><Plus size={16} /> Add Product</Button>}
-      </div>
-      <Card>
-        <div className="p-4 border-b border-gray-50 flex gap-3 flex-wrap">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-primary-500" placeholder="Search name, SKU, barcode..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
-          </div>
-          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-            <input type="checkbox" checked={lowStock} onChange={e => { setLowStock(e.target.checked); setPage(1); }} className="rounded" />
-            Low stock only
-          </label>
-        </div>
-        <Table columns={columns} data={rows} loading={isLoading} emptyMsg="No products found" />
-        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
-      </Card>
-
-      <Modal open={!!modal} onClose={() => setModal(null)} title={modal?.mode === "add" ? "Add Product" : "Edit Product"} size="lg">
-        <form onSubmit={handleSubmit(d => mutation.mutate(d))} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2"><Input label="Product Name *" error={errors.name?.message} {...register("name", { required: "Required" })} /></div>
-            <Input label="SKU" {...register("sku")} />
-            <Input label="Barcode" {...register("barcode")} />
-            <Select label="Category" {...register("categoryId")}>
-              <option value="">— No Category —</option>
-              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </Select>
-            <Input label="Unit" placeholder="pcs, kg, m..." {...register("unit")} />
-            <Input label="Purchase Price *" type="number" step="0.01" error={errors.purchasePrice?.message} {...register("purchasePrice", { required: "Required", valueAsNumber: true })} />
-            <Input label="Selling Price *" type="number" step="0.01" error={errors.sellingPrice?.message} {...register("sellingPrice", { required: "Required", valueAsNumber: true })} />
-            <Input label="Current Stock" type="number" step="0.01" {...register("stock", { valueAsNumber: true })} />
-            <Input label="Reorder Level" type="number" {...register("reorderLevel", { valueAsNumber: true })} />
-            <Input label="Tax %" type="number" step="0.01" {...register("taxPercent", { valueAsNumber: true })} />
-          </div>
-
-          {/* Custom Attributes */}
+    <>
+      <div className="space-y-5">
+        {/* Page header */}
+        <div className="flex items-start justify-between">
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-gray-700">Custom Attributes</label>
-              <button type="button" onClick={() => appendAttr({ key: "", value: "" })} className="text-primary-600 text-xs flex items-center gap-1 hover:underline">
-                <PlusCircle size={13} /> Add attribute
+            <h1 className="text-[22px] font-semibold tracking-tight text-gray-900">Inventory</h1>
+            <p className="text-sm text-gray-400 mt-0.5">
+              {totalDocs} products · {organization?.storeType ? (organization.storeType.charAt(0).toUpperCase() + organization.storeType.slice(1)) : "General"} catalog
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium border border-gray-200 bg-white rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
+              <Upload size={14} /> Import XLS
+            </button>
+            <button className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium border border-gray-200 bg-white rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
+              <Download size={14} /> Export
+            </button>
+            {isAdmin() && (
+              <button onClick={openAdd}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm">
+                <Plus size={14} /> Add product
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Filter bar */}
+        <div className="bg-white border border-gray-100 rounded-xl">
+          <div className="flex items-center gap-2.5 p-3 border-b border-gray-50">
+            <div className="relative flex-1 max-w-xs">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition"
+                placeholder="Search products, SKU, barcode…"
+                value={search}
+                onChange={e => { setSearch(e.target.value); setPage(1); }}
+              />
+            </div>
+            <select
+              value={catFilter}
+              onChange={e => { setCatFilter(e.target.value); setPage(1); }}
+              className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-primary-500 bg-white text-gray-700"
+            >
+              <option value="all">All categories</option>
+              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            <div className="ml-auto flex items-center gap-1 p-1 bg-gray-50 rounded-lg border border-gray-100">
+              <button onClick={() => setView("table")}
+                className={`p-1.5 rounded ${view === "table" ? "bg-white shadow-sm text-primary-600" : "text-gray-400 hover:text-gray-600"} transition-colors`}>
+                <LayoutList size={15} />
+              </button>
+              <button onClick={() => setView("grid")}
+                className={`p-1.5 rounded ${view === "grid" ? "bg-white shadow-sm text-primary-600" : "text-gray-400 hover:text-gray-600"} transition-colors`}>
+                <LayoutGrid size={15} />
               </button>
             </div>
-            {attrs.map((f, i) => (
-              <div key={f.id} className="flex gap-2 mb-2">
-                <input className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg" placeholder="Key (e.g. Color)" {...register(`attributes.${i}.key`)} />
-                <input className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg" placeholder="Value (e.g. Red)" {...register(`attributes.${i}.value`)} />
-                <button type="button" onClick={() => removeAttr(i)} className="text-red-400 hover:text-red-600"><MinusCircle size={18} /></button>
-              </div>
-            ))}
           </div>
 
-          <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="secondary" onClick={() => setModal(null)}>Cancel</Button>
-            <Button type="submit" loading={mutation.isPending}>Save</Button>
-          </div>
-        </form>
-      </Modal>
-      <ConfirmModal open={!!confirm} onClose={() => setConfirm(null)} onConfirm={() => deleteMutation.mutate(confirm?.id)} loading={deleteMutation.isPending} message={`Delete "${confirm?.name}"?`} />
-    </div>
+          {/* Table view */}
+          {view === "table" && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-50">
+                    <th className="w-9 px-4 py-3"><input type="checkbox" className="rounded accent-primary-600" /></th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Product</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">SKU / Barcode</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Brand</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Cost</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Price</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Stock</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 w-16"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {isLoading && (
+                    <tr><td colSpan={10} className="py-16 text-center text-sm text-gray-400">Loading…</td></tr>
+                  )}
+                  {!isLoading && rows.length === 0 && (
+                    <tr>
+                      <td colSpan={10} className="py-16 text-center">
+                        <div className="text-3xl mb-2">📦</div>
+                        <p className="text-sm text-gray-500">No products found</p>
+                        {isAdmin() && <button onClick={openAdd} className="mt-3 text-xs text-primary-600 font-medium hover:underline">+ Add your first product</button>}
+                      </td>
+                    </tr>
+                  )}
+                  {rows.map(p => {
+                    const { tone, label } = stockStatus(p);
+                    const brand = getAttr(p, "brand");
+                    const subcategory = getAttr(p, "subcategory");
+                    return (
+                      <tr key={p.id} className="hover:bg-gray-50/50 transition-colors group">
+                        <td className="px-4 py-3"><input type="checkbox" className="rounded accent-primary-600" /></td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-lg flex-shrink-0 font-medium text-gray-600">
+                              {p.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900 leading-tight">{p.name}</p>
+                              {subcategory && <p className="text-[11px] text-gray-400 mt-0.5">{subcategory}</p>}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          {p.sku && <p className="font-mono text-[11px] text-gray-700">{p.sku}</p>}
+                          {p.barcode && <p className="font-mono text-[10.5px] text-gray-400">{p.barcode}</p>}
+                          {!p.sku && !p.barcode && <span className="text-gray-300">—</span>}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600 text-sm">{p.categoryId?.name || "—"}</td>
+                        <td className="px-4 py-3 text-gray-600 text-sm">{brand || "—"}</td>
+                        <td className="px-4 py-3 text-right text-sm text-gray-500">{fmtINR(p.purchasePrice)}</td>
+                        <td className="px-4 py-3 text-right text-sm font-semibold text-gray-900">{fmtINR(p.sellingPrice)}</td>
+                        <td className="px-4 py-3 text-right">
+                          <span className={`font-semibold text-sm ${TONE_STOCK[tone]}`}>{p.stock}</span>
+                          <span className="text-[11px] text-gray-400 ml-1">{p.unit}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${TONE_PILL[tone]}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${TONE_DOT[tone]}`} />
+                            {label}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {isAdmin() && (
+                              <>
+                                <button onClick={() => openEdit(p)}
+                                  className="p-1.5 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 transition-colors">
+                                  <Pencil size={13} />
+                                </button>
+                                <button onClick={() => handleDelete(p)}
+                                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                                  <Trash2 size={13} />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Grid view */}
+          {view === "grid" && (
+            <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {isLoading && <p className="col-span-full py-12 text-center text-sm text-gray-400">Loading…</p>}
+              {!isLoading && rows.length === 0 && (
+                <div className="col-span-full py-12 text-center">
+                  <div className="text-3xl mb-2">📦</div>
+                  <p className="text-sm text-gray-500">No products found</p>
+                </div>
+              )}
+              {rows.map(p => {
+                const { tone } = stockStatus(p);
+                const brand = getAttr(p, "brand");
+                return (
+                  <div key={p.id} className="bg-white rounded-xl border border-gray-100 p-3 hover:shadow-md transition-shadow group cursor-pointer" onClick={() => isAdmin() && openEdit(p)}>
+                    <div className="w-full aspect-square rounded-lg bg-gray-50 flex items-center justify-center text-4xl mb-3">
+                      {p.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-400 truncate">{brand || "—"}</span>
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${TONE_PILL[tone]}`}>{p.stock}</span>
+                    </div>
+                    <p className="text-sm font-medium text-gray-900 truncate leading-tight">{p.name}</p>
+                    <p className="text-sm font-semibold text-primary-600 mt-1">{fmtINR(p.sellingPrice)}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-50 text-sm text-gray-500">
+              <span>Page {page} of {totalPages}</span>
+              <div className="flex gap-1.5">
+                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+                  className="px-3 py-1.5 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors text-xs">Prev</button>
+                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+                  className="px-3 py-1.5 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors text-xs">Next</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Add / Edit drawer */}
+      <AddProductDrawer
+        open={drawerOpen}
+        onClose={() => { setDrawerOpen(false); setEditProduct(null); }}
+        editProduct={editProduct}
+      />
+    </>
   );
 }

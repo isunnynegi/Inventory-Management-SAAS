@@ -7,12 +7,14 @@ import logger from "../../utils/logger.js";
 
 const slugify = (s) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/-+/g, "-");
 
-export const register = async ({ name, email, password, organizationName, storeType }) => {
+export const register = async ({ name, email, password, storeName, organizationName, storeType }) => {
   const existing = await User.findOne({ email }).lean();
   if (existing) throw ApiError.conflict("Email already registered");
 
+  const orgName = storeName || organizationName || `${name.split(" ")[0]}'s Store`;
   const org = await Organization.create({
-    name: organizationName || `${name.split(" ")[0]}'s Store`,
+    name: orgName,
+    storeName: orgName,
     storeType: storeType || "general",
     createdBy: null,
   });

@@ -1,9 +1,13 @@
 import mongoose from "mongoose";
 import { basePlugin } from "../../common/basePlugin.js";
 
+const slugify = (s) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+
 const organizationSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true, maxlength: 100 },
-  storeType: { type: String, enum: ["general","electronics","sanitary","hardware","pharmacy","grocery","clothing","other"], default: "general" },
+  storeName: { type: String, trim: true, maxlength: 100 },
+  slug: { type: String, unique: true, lowercase: true, trim: true },
+  storeType: { type: String, enum: ["general","electronics","electrical","sanitary","hardware","pharmacy","grocery","clothing","other"], default: "general" },
   currency: { type: String, default: "INR" },
   currencySymbol: { type: String, default: "₹" },
   address: {
@@ -24,6 +28,18 @@ const organizationSchema = new mongoose.Schema({
     defaultTaxRate: { type: Number, default: 0 },
   },
 }, { timestamps: true });
+
+organizationSchema.pre("save", async function(next) {
+  if (!this.isModified("name") && this.slug) return next();
+  const base = slugify(this.storeName || this.name);
+  let slug = base;
+  let i = 1;
+  while (await this.constructor.exists({ slug, _id: { $ne: this._id } })) {
+    slug = `${base}-${i++}`;
+  }
+  this.slug = slug;
+  next();
+});
 
 organizationSchema.plugin(basePlugin);
 const Organization = mongoose.model("Organization", organizationSchema);

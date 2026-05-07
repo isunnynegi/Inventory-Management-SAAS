@@ -35,7 +35,7 @@ function SessionRestorer() {
   useEffect(() => {
     let cancelled = false;
     authApi.getMe()
-      .then(res => { if (!cancelled) setAuth({ user: res.data, organization: null, accessToken: window.__accessToken || "" }); })
+      .then(res => { if (!cancelled) setAuth({ user: res.data.user, organization: res.data.organization, accessToken: window.__accessToken || "" }); })
       .catch(() => { if (!cancelled) clearAuth(); });
     const h = () => clearAuth();
     window.addEventListener("auth:logout", h);

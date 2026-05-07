@@ -1,9 +1,16 @@
 import dotenv from "dotenv";
-dotenv.config();
-import "./config/env.js";
-import app from "./app.js";
-import connectDB, { closeDB } from "./config/db.js";
-import logger from "./utils/logger.js";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: join(__dirname, "../.env") });
+
+// Dynamic imports run AFTER dotenv.config() — required in ESM to avoid hoisting
+const [{ default: app }, { default: connectDB, closeDB }, { default: logger }] = await Promise.all([
+  import("./app.js"),
+  import("./config/db.js"),
+  import("./utils/logger.js"),
+]);
 
 const PORT = process.env.PORT || 5000;
 let server;

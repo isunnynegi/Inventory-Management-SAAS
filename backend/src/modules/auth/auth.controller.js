@@ -1,6 +1,7 @@
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import * as svc from "./auth.service.js";
+import Organization from "../organization/organization.model.js";
 
 const setCookie = (res, token) => res.cookie("refreshToken", token, {
   httpOnly: true, secure: process.env.NODE_ENV === "production",
@@ -34,7 +35,12 @@ export const logout = asyncHandler(async (req, res) => {
   return ApiResponse.ok(res, "Logged out");
 });
 
-export const getMe = asyncHandler(async (req, res) => ApiResponse.ok(res, "Profile", req.user));
+export const getMe = asyncHandler(async (req, res) => {
+  const organization = req.user.organizationId
+    ? await Organization.findById(req.user.organizationId).lean()
+    : null;
+  return ApiResponse.ok(res, "Profile", { user: req.user, organization });
+});
 
 export const forgotPassword = asyncHandler(async (req, res) => {
   await svc.forgotPassword(req.body.email);

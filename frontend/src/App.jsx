@@ -1,0 +1,85 @@
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { Toaster } from "react-hot-toast";
+import { useEffect } from "react";
+import { ProtectedRoute, PublicRoute } from "./components/RouteGuards.jsx";
+import Layout from "./components/Layout/Layout.jsx";
+import { useAuthStore } from "./stores/authStore.js";
+import { authApi } from "./api/index.js";
+
+import LoginPage from "./pages/auth/LoginPage.jsx";
+import RegisterPage from "./pages/auth/RegisterPage.jsx";
+import DashboardPage from "./pages/dashboard/DashboardPage.jsx";
+import CategoriesPage from "./pages/categories/CategoriesPage.jsx";
+import ProductsPage from "./pages/products/ProductsPage.jsx";
+import SuppliersPage from "./pages/suppliers/SuppliersPage.jsx";
+import CustomersPage from "./pages/customers/CustomersPage.jsx";
+import PurchasesPage from "./pages/purchases/PurchasesPage.jsx";
+import SalesPage from "./pages/sales/SalesPage.jsx";
+import StockAdjustmentsPage from "./pages/stockAdjustments/StockAdjustmentsPage.jsx";
+import InvoicesPage from "./pages/invoices/InvoicesPage.jsx";
+import ReportsPage from "./pages/reports/ReportsPage.jsx";
+import UsersPage from "./pages/users/UsersPage.jsx";
+import SettingsPage from "./pages/settings/SettingsPage.jsx";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { staleTime: 5 * 60 * 1000, gcTime: 10 * 60 * 1000, retry: 1, refetchOnWindowFocus: false },
+    mutations: { retry: false },
+  },
+});
+
+function SessionRestorer() {
+  const { setAuth, clearAuth } = useAuthStore();
+  useEffect(() => {
+    let cancelled = false;
+    authApi.getMe()
+      .then(res => { if (!cancelled) setAuth({ user: res.data, organization: null, accessToken: window.__accessToken || "" }); })
+      .catch(() => { if (!cancelled) clearAuth(); });
+    const h = () => clearAuth();
+    window.addEventListener("auth:logout", h);
+    return () => { cancelled = true; window.removeEventListener("auth:logout", h); };
+  }, []);
+  return null;
+}
+
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <SessionRestorer />
+        <Toaster position="top-right" toastOptions={{ duration: 4000, style: { borderRadius: "12px", fontSize: "14px" } }} />
+        <Routes>
+          <Route element={<PublicRoute />}>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+          </Route>
+          <Route element={<ProtectedRoute />}>
+            <Route element={<Layout />}>
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/categories" element={<CategoriesPage />} />
+              <Route path="/products" element={<ProductsPage />} />
+              <Route path="/suppliers" element={<SuppliersPage />} />
+              <Route path="/customers" element={<CustomersPage />} />
+              <Route path="/purchases" element={<PurchasesPage />} />
+              <Route path="/sales" element={<SalesPage />} />
+              <Route path="/stock-adjustments" element={<StockAdjustmentsPage />} />
+              <Route path="/invoices" element={<InvoicesPage />} />
+              <Route path="/reports" element={<ReportsPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+            </Route>
+          </Route>
+          <Route element={<ProtectedRoute adminOnly />}>
+            <Route element={<Layout />}>
+              <Route path="/users" element={<UsersPage />} />
+            </Route>
+          </Route>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </BrowserRouter>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
+  );
+}

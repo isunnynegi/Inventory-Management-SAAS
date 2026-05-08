@@ -25,6 +25,7 @@ export const platformApi = {
 };
 export const categoryApi = {
   list: p => api.get("/categories", { params: p }).then(r),
+  subcategories: id => api.get(`/categories/${id}/subcategories`).then(r),
   create: d => api.post("/categories", d).then(r),
   update: (id, d) => api.put(`/categories/${id}`, d).then(r),
   delete: id => api.delete(`/categories/${id}`).then(r),

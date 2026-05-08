@@ -4,6 +4,7 @@ import Organization from "../organization/organization.model.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { signToken, signRefreshToken, verifyRefreshToken } from "../../middleware/auth.js";
 import logger from "../../utils/logger.js";
+import { seedCategoriesForStore } from "../../seeders/electricalCategories.js";
 
 const slugify = (s) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/-+/g, "-");
 
@@ -22,6 +23,11 @@ export const register = async ({ name, email, password, storeName, organizationN
   const user = await User.create({ name, email, password, organizationId: org._id, role: "admin" });
 
   await Organization.findByIdAndUpdate(org._id, { createdBy: user._id });
+
+  // Seed default categories based on store type (non-blocking — failure must not break registration)
+  seedCategoriesForStore(storeType || "general", org._id, user._id).catch(err =>
+    logger.warn(`Category seed failed for org ${org._id}: ${err.message}`)
+  );
 
   const accessToken = signToken(user._id, org._id, user.role);
   const refreshToken = signRefreshToken(user._id);

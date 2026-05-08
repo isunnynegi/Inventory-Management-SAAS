@@ -7,7 +7,7 @@ import { Router } from "express";
 import { authenticate, authorize } from "../../middleware/auth.js";
 
 export const list = asyncHandler(async (req, res) => {
-  const { page, limit, search, categoryId, lowStock } = req.query;
+  const { page, limit, search, categoryId, lowStock, subcategory } = req.query;
   const filter = { organizationId: req.organizationId };
   if (search) filter.$or = [
     { name: { $regex: search, $options: "i" } },
@@ -16,6 +16,8 @@ export const list = asyncHandler(async (req, res) => {
   ];
   if (categoryId) filter.categoryId = categoryId;
   if (lowStock === "true") filter.$expr = { $lte: ["$stock", "$reorderLevel"] };
+  // subcategory is stored in attributes array as {key:"subcategory", value:"..."}
+  if (subcategory) filter.attributes = { $elemMatch: { key: "subcategory", value: subcategory } };
   const result = await paginate(Product, filter, {
     page, limit,
     populate: { path: "categoryId", select: "name" },

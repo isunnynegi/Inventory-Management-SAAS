@@ -46,6 +46,7 @@ export default function ProductsPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("all");
+  const [subCatFilter, setSubCatFilter] = useState("all");
   const [view, setView] = useState("table"); // "table" | "grid"
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
@@ -56,13 +57,21 @@ export default function ProductsPage() {
   });
   const categories = catData?.data || [];
 
+  const { data: subData } = useQuery({
+    queryKey: ["subcategories", catFilter],
+    queryFn: () => categoryApi.subcategories(catFilter),
+    enabled: catFilter !== "all",
+  });
+  const subcategories = subData?.data ?? [];
+
   const { data, isLoading } = useQuery({
-    queryKey: ["products", page, search, catFilter],
+    queryKey: ["products", page, search, catFilter, subCatFilter],
     queryFn: () => productApi.list({
       page,
       limit: 20,
       search,
       categoryId: catFilter !== "all" ? catFilter : undefined,
+      subcategory: subCatFilter !== "all" ? subCatFilter : undefined,
     }),
   });
 
@@ -125,12 +134,22 @@ export default function ProductsPage() {
             </div>
             <select
               value={catFilter}
-              onChange={e => { setCatFilter(e.target.value); setPage(1); }}
+              onChange={e => { setCatFilter(e.target.value); setSubCatFilter("all"); setPage(1); }}
               className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-primary-500 bg-white text-gray-700"
             >
               <option value="all">All categories</option>
               {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
+            {catFilter !== "all" && subcategories.length > 0 && (
+              <select
+                value={subCatFilter}
+                onChange={e => { setSubCatFilter(e.target.value); setPage(1); }}
+                className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-primary-500 bg-white text-gray-700"
+              >
+                <option value="all">All subcategories</option>
+                {subcategories.map(s => <option key={s.id || s._id} value={s.name}>{s.name}</option>)}
+              </select>
+            )}
             <div className="ml-auto flex items-center gap-1 p-1 bg-gray-50 rounded-lg border border-gray-100">
               <button onClick={() => setView("table")}
                 className={`p-1.5 rounded ${view === "table" ? "bg-white shadow-sm text-primary-600" : "text-gray-400 hover:text-gray-600"} transition-colors`}>

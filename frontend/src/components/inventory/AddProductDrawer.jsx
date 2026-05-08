@@ -67,7 +67,7 @@ export default function AddProductDrawer({ open, onClose, editProduct = null }) 
 
   const set = useCallback((k, v) => setForm(f => ({ ...f, [k]: v })), []);
 
-  // Load categories
+  // Load parent categories
   const { data: catData } = useQuery({
     queryKey: ["categories-all"],
     queryFn: () => categoryApi.list({ limit: 100 }),
@@ -75,6 +75,14 @@ export default function AddProductDrawer({ open, onClose, editProduct = null }) 
   });
   const categories = catData?.data || [];
   const categoryOptions = categories.map(c => ({ v: c.id, l: c.name }));
+
+  // Load subcategories when a category is selected
+  const { data: subData } = useQuery({
+    queryKey: ["subcategories", form.category],
+    queryFn: () => categoryApi.subcategories(form.category),
+    enabled: !!form.category,
+  });
+  const subcategoryOptions = (subData?.data ?? []).map(s => ({ v: s.name, l: s.name }));
 
   // Populate form for edit mode
   useEffect(() => {
@@ -219,12 +227,20 @@ export default function AddProductDrawer({ open, onClose, editProduct = null }) 
               <DynField
                 field={COMMON_BASICS[2]}
                 value={form.category}
-                onChange={v => set("category", v)}
+                onChange={v => { set("category", v); set("subcategory", ""); }}
                 options={categoryOptions}
               />
             </Row2>
             <Row2>
-              <DynField field={COMMON_BASICS[3]} value={form.subcategory} onChange={v => set("subcategory", v)} />
+              <DynField
+                field={
+                  subcategoryOptions.length > 0
+                    ? { ...COMMON_BASICS[3], type: "select", options: subcategoryOptions }
+                    : COMMON_BASICS[3]
+                }
+                value={form.subcategory}
+                onChange={v => set("subcategory", v)}
+              />
               <DynField field={COMMON_BASICS[4]} value={form.description} onChange={v => set("description", v)} />
             </Row2>
           </FormSection>

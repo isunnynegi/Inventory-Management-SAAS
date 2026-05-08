@@ -99,7 +99,7 @@ function SubcategoryList({ parentId, parentCategory, canEdit }) {
   });
 
   return (
-    <div className="ml-10 mr-4 mb-3 rounded-lg border border-gray-100 bg-gray-50/60 overflow-hidden">
+    <div className="ml-10 mr-4 mb-3 rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/60 overflow-hidden">
       {isLoading ? (
         <p className="text-xs text-gray-400 px-4 py-3">Loading…</p>
       ) : (
@@ -114,9 +114,9 @@ function SubcategoryList({ parentId, parentCategory, canEdit }) {
             >
               <div className="flex items-center gap-2 min-w-0">
                 <Tag size={12} className="text-gray-400 flex-shrink-0" />
-                <span className="text-sm text-gray-700 truncate">{sub.name}</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{sub.name}</span>
                 {sub.description && (
-                  <span className="text-xs text-gray-400 truncate hidden sm:block">— {sub.description}</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500 truncate hidden sm:block">— {sub.description}</span>
                 )}
               </div>
               {canEdit && (
@@ -177,22 +177,22 @@ function CategoryRow({ cat, canEdit, onEdit, onDelete }) {
 
   return (
     <>
-      <tr className="hover:bg-gray-50 transition-colors">
+      <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
         <td className="py-3 px-4">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setExpanded(e => !e)}
-              className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors flex-shrink-0"
+              className="p-1 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex-shrink-0"
               title={expanded ? "Collapse" : "Show subcategories"}
             >
               {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             </button>
             <FolderOpen size={14} className="text-primary-400 flex-shrink-0" />
-            <span className="font-medium text-gray-900">{cat.name}</span>
+            <span className="font-medium text-gray-900 dark:text-gray-100">{cat.name}</span>
           </div>
         </td>
-        <td className="py-3 px-4 text-gray-500 text-sm max-w-xs truncate">{cat.description || "—"}</td>
-        <td className="py-3 px-4 text-gray-400 text-xs">{new Date(cat.createdAt).toLocaleDateString("en-IN")}</td>
+        <td className="py-3 px-4 text-gray-500 dark:text-gray-400 text-sm max-w-xs truncate">{cat.description || "—"}</td>
+        <td className="py-3 px-4 text-gray-400 dark:text-gray-500 text-xs">{new Date(cat.createdAt).toLocaleDateString("en-IN")}</td>
         <td className="py-3 px-4">
           {canEdit && (
             <div className="flex justify-end gap-1">
@@ -250,8 +250,8 @@ export default function CategoriesPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Categories</h1>
-          <p className="text-sm text-gray-500">Manage categories and their subcategories</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Categories</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Manage categories and their subcategories</p>
         </div>
         {isAdmin() && (
           <Button onClick={() => setModal({ mode: "add" })}>
@@ -265,7 +265,7 @@ export default function CategoriesPage() {
           <div className="relative max-w-xs">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
-              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-primary-500"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 dark:focus:border-primary-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
               placeholder="Search categories…"
               value={search}
               onChange={e => { setSearch(e.target.value); setPage(1); }}
@@ -276,11 +276,11 @@ export default function CategoriesPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Name</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Description</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Added</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
+              <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Name</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Description</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Added</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">

@@ -47,7 +47,7 @@ export default function InvoicesPage() {
 
   return (
     <div className="space-y-5">
-      <div><h1 className="text-xl font-bold text-gray-900">Invoices</h1><p className="text-sm text-gray-500">Generate invoices from sales</p></div>
+      <div><h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Invoices</h1><p className="text-sm text-gray-500 dark:text-gray-400">Generate invoices from sales</p></div>
       <Card>
         <Table columns={columns} data={rows} loading={isLoading} emptyMsg="No invoices yet. Generate one from a sale." />
         <Pagination page={page} totalPages={totalPages} onChange={setPage} />

@@ -25,8 +25,8 @@ export default function StoreDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-500">Welcome back! Here's what's happening today.</p>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Welcome back! Here's what's happening today.</p>
       </div>
 
       {/* KPI Cards */}
@@ -48,7 +48,7 @@ export default function StoreDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Sales Chart */}
         <Card className="lg:col-span-2 p-5">
-          <h2 className="font-semibold text-gray-800 mb-4">Sales Trend (Last 6 Months)</h2>
+          <h2 className="font-semibold text-gray-800 dark:text-gray-200 mb-4">Sales Trend (Last 6 Months)</h2>
           {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={chartData}>
@@ -72,7 +72,7 @@ export default function StoreDashboard() {
 
         {/* Low Stock */}
         <Card className="p-5">
-          <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+          <h2 className="font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
             <AlertTriangle size={16} className="text-orange-500" /> Low Stock Alert
           </h2>
           {lowStockList.length === 0 ? (
@@ -80,7 +80,7 @@ export default function StoreDashboard() {
           ) : (
             <div className="space-y-2 overflow-y-auto max-h-[200px]">
               {lowStockList.slice(0,8).map(p => (
-                <div key={p.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                <div key={p.id} className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-gray-700 last:border-0">
                   <div>
                     <p className="text-sm font-medium text-gray-800 truncate max-w-[130px]">{p.name}</p>
                     <p className="text-xs text-gray-400">{p.categoryId?.name || "—"}</p>
@@ -96,17 +96,17 @@ export default function StoreDashboard() {
       {/* Recent Transactions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-5">
-          <h2 className="font-semibold text-gray-800 mb-4">Recent Sales</h2>
+          <h2 className="font-semibold text-gray-800 dark:text-gray-200 mb-4">Recent Sales</h2>
           {recentSales.length === 0 ? <p className="text-gray-400 text-sm text-center py-6">No sales yet</p> : (
             <div className="space-y-2">
               {recentSales.map(s => (
-                <div key={s._id} className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
+                <div key={s._id} className="flex justify-between items-center py-2 border-b border-gray-50 dark:border-gray-700 last:border-0">
                   <div>
-                    <p className="text-sm font-medium text-gray-800">{s.saleNumber}</p>
+                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{s.saleNumber}</p>
                     <p className="text-xs text-gray-400">{s.customerName || "Walk-in"} · {format(new Date(s.date), "dd MMM")}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-semibold text-gray-900">{fmtCur(s.totalAmount, sym)}</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{fmtCur(s.totalAmount, sym)}</p>
                     <Badge color={s.paymentStatus==="paid"?"green":s.paymentStatus==="partial"?"yellow":"red"}>{s.paymentStatus}</Badge>
                   </div>
                 </div>
@@ -116,17 +116,17 @@ export default function StoreDashboard() {
         </Card>
 
         <Card className="p-5">
-          <h2 className="font-semibold text-gray-800 mb-4">Recent Purchases</h2>
+          <h2 className="font-semibold text-gray-800 dark:text-gray-200 mb-4">Recent Purchases</h2>
           {recentPurchases.length === 0 ? <p className="text-gray-400 text-sm text-center py-6">No purchases yet</p> : (
             <div className="space-y-2">
               {recentPurchases.map(p => (
-                <div key={p._id} className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
+                <div key={p._id} className="flex justify-between items-center py-2 border-b border-gray-50 dark:border-gray-700 last:border-0">
                   <div>
-                    <p className="text-sm font-medium text-gray-800">{p.purchaseNumber}</p>
+                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{p.purchaseNumber}</p>
                     <p className="text-xs text-gray-400">{p.supplierName || "—"} · {format(new Date(p.date), "dd MMM")}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-semibold text-gray-900">{fmtCur(p.totalAmount, sym)}</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{fmtCur(p.totalAmount, sym)}</p>
                     <Badge color={p.paymentStatus==="paid"?"green":p.paymentStatus==="partial"?"yellow":"red"}>{p.paymentStatus}</Badge>
                   </div>
                 </div>

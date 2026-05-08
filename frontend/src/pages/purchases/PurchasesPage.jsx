@@ -77,7 +77,7 @@ export default function PurchasesPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <div><h1 className="text-xl font-bold text-gray-900">Purchases</h1><p className="text-sm text-gray-500">Stock-in records</p></div>
+        <div><h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Purchases</h1><p className="text-sm text-gray-500 dark:text-gray-400">Stock-in records</p></div>
         <Button onClick={() => { reset({ items: [{ productId: "", qty: 1, costPrice: 0, taxPercent: 0 }], discount: 0, amountPaid: 0, paymentMethod: "cash" }); setModal(true); }}><Plus size={16} /> New Purchase</Button>
       </div>
 

@@ -48,7 +48,7 @@ export default function StockAdjustmentsPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <div><h1 className="text-xl font-bold text-gray-900">Stock Adjustments</h1><p className="text-sm text-gray-500">Manual stock corrections</p></div>
+        <div><h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Stock Adjustments</h1><p className="text-sm text-gray-500">Manual stock corrections</p></div>
         <Button onClick={() => { reset({ type: "increase" }); setModal(true); }}><Plus size={16} /> Adjust Stock</Button>
       </div>
       <Card>

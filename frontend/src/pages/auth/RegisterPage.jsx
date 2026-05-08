@@ -70,19 +70,19 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fafbfc] flex items-center justify-center px-6 py-12">
+    <div className="min-h-screen bg-[#fafbfc] dark:bg-gray-950 flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-[420px]">
         <div className="flex items-center gap-2 mb-8">
           <div className="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center text-white font-bold text-sm">S</div>
-          <span className="font-bold text-gray-900 text-lg">StockKart</span>
+          <span className="font-bold text-gray-900 dark:text-gray-100 text-lg">StockKart</span>
         </div>
 
-        <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Create your account</h1>
-        <p className="text-sm text-gray-500 mt-1 mb-8">
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 tracking-tight">Create your account</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-8">
           Already registered? <Link to="/login" className="text-primary-600 font-medium hover:underline">Sign in</Link>
         </p>
 
-        <div className="bg-white rounded-2xl border border-gray-100 p-7 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-7 shadow-sm">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">

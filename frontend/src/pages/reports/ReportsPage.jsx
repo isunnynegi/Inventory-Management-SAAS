@@ -26,7 +26,7 @@ export default function ReportsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div><h1 className="text-xl font-bold text-gray-900">Reports</h1><p className="text-sm text-gray-500">Business analytics</p></div>
+        <div><h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Reports</h1><p className="text-sm text-gray-500 dark:text-gray-400">Business analytics</p></div>
         <div className="flex gap-3 items-center">
           <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="px-3 py-2 text-sm border border-gray-200 rounded-lg" />
           <span className="text-gray-400">to</span>

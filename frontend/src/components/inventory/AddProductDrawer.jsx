@@ -39,8 +39,8 @@ function fmtINR(n) {
 // ─── Section wrapper ────────────────────────────────────────────
 function FormSection({ title, accent, children }) {
   return (
-    <div className={`rounded-xl p-4 border ${accent ? "border-primary-100 bg-gradient-to-b from-primary-50/60 to-transparent" : "border-gray-100 bg-white"}`}>
-      <p className={`text-[10px] font-bold uppercase tracking-wider mb-3 ${accent ? "text-primary-600" : "text-gray-400"}`}>{title}</p>
+    <div className={`rounded-xl p-4 border ${accent ? "border-primary-100 dark:border-primary-900/50 bg-gradient-to-b from-primary-50/60 dark:from-primary-900/20 to-transparent" : "border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800"}`}>
+      <p className={`text-[10px] font-bold uppercase tracking-wider mb-3 ${accent ? "text-primary-600 dark:text-primary-400" : "text-gray-400 dark:text-gray-500"}`}>{title}</p>
       <div className="space-y-3">{children}</div>
     </div>
   );
@@ -190,18 +190,18 @@ export default function AddProductDrawer({ open, onClose, editProduct = null }) 
       <div className="fixed inset-0 bg-black/30 z-40 backdrop-blur-[1px]" onClick={onClose} />
 
       {/* Drawer panel */}
-      <div className="fixed right-0 top-0 h-full w-full max-w-[640px] bg-gray-50 z-50 flex flex-col shadow-2xl">
+      <div className="fixed right-0 top-0 h-full w-full max-w-[640px] bg-gray-50 dark:bg-gray-900 z-50 flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-100 flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-primary-50 flex items-center justify-center text-xl flex-shrink-0">
               {schemaIcon}
             </div>
             <div>
-              <h2 className="text-[17px] font-semibold text-gray-900 leading-tight">
+              <h2 className="text-[17px] font-semibold text-gray-900 dark:text-gray-100 leading-tight">
                 {editProduct ? "Edit product" : "Add new product"}
               </h2>
-              <p className="text-xs text-gray-400 mt-0.5">{schemaLabel} catalog · form adapts to category</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{schemaLabel} catalog · form adapts to category</p>
             </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
@@ -255,9 +255,9 @@ export default function AddProductDrawer({ open, onClose, editProduct = null }) 
             {/* Image upload placeholder */}
             <div>
               <p className="field-label">Product image</p>
-              <div className="border-2 border-dashed border-gray-200 rounded-lg p-5 text-center bg-white text-gray-400 hover:border-primary-300 hover:bg-primary-50/20 transition-colors cursor-pointer">
+              <div className="border-2 border-dashed border-gray-200 dark:border-gray-600 rounded-lg p-5 text-center bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500 hover:border-primary-300 hover:bg-primary-50/20 dark:hover:bg-primary-900/10 transition-colors cursor-pointer">
                 <p className="text-2xl mb-1">📷</p>
-                <p className="text-sm font-medium text-gray-600">Drop image here, or <span className="text-primary-600">browse</span></p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Drop image here, or <span className="text-primary-600 dark:text-primary-400">browse</span></p>
                 <p className="text-[11px] mt-0.5">PNG, JPG, WEBP up to 5 MB</p>
               </div>
             </div>
@@ -311,7 +311,7 @@ export default function AddProductDrawer({ open, onClose, editProduct = null }) 
           ))}
 
           {/* Smart form hint */}
-          <div className="flex items-start gap-2.5 px-3.5 py-3 bg-sky-50 text-sky-700 rounded-xl text-xs border border-sky-100">
+          <div className="flex items-start gap-2.5 px-3.5 py-3 bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-400 rounded-xl text-xs border border-sky-100 dark:border-sky-800/50">
             <Sparkles size={14} className="flex-shrink-0 mt-0.5" />
             <div>
               <strong>Smart form:</strong> Fields adapt to the {schemaLabel} catalog and the category you select.
@@ -321,15 +321,15 @@ export default function AddProductDrawer({ open, onClose, editProduct = null }) 
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 px-6 py-4 bg-white border-t border-gray-100 flex-shrink-0">
+        <div className="flex items-center justify-end gap-2 px-6 py-4 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-700 flex-shrink-0">
           <button type="button" onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+            className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
             Cancel
           </button>
           {!editProduct && (
             <button type="button" onClick={() => handleSubmit(true)}
               disabled={mutation.isPending}
-              className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-60">
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-60">
               Save & add another
             </button>
           )}

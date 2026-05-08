@@ -56,33 +56,33 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
-        <h1 className="text-xl font-bold text-gray-900">Settings</h1>
-        <p className="text-sm text-gray-500">Manage your store profile and preferences</p>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Settings</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Manage your store profile and preferences</p>
       </div>
 
       <form onSubmit={handleSubmit(d => mutation.mutate(d))}>
         <div className="space-y-6">
 
           <Card className="p-6">
-            <h2 className="font-semibold text-gray-800 mb-4">Store Information</h2>
+            <h2 className="font-semibold text-gray-800 dark:text-gray-200 mb-4">Store Information</h2>
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
                 <Input label="Store Name *" error={errors.name?.message} {...register("name", { required: "Required" })} />
               </div>
               {/* Store type is read-only — contact platform admin to change */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Store Type</label>
-                <div className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-600 capitalize">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Store Type</label>
+                <div className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-400 capitalize">
                   {STORE_TYPE_LABELS[organization?.storeType] ?? organization?.storeType ?? "—"}
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Contact platform admin to change store type</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Contact platform admin to change store type</p>
               </div>
               <Input label="GST/Tax ID" {...register("gstin")} />
               <Input label="Phone" {...register("phone")} />
               <Input label="Email" type="email" {...register("email")} />
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
-                <select className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none bg-white focus:border-primary-500 focus:ring-2 focus:ring-primary-100" {...register("currency")}>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Currency</label>
+                <select className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-sm outline-none bg-white dark:bg-gray-800 dark:text-gray-100 focus:border-primary-500 dark:focus:border-primary-400 focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900/30" {...register("currency")}>
                   {currencies.map(c => <option key={c.code} value={c.code}>{c.code} ({c.sym})</option>)}
                 </select>
               </div>
@@ -91,7 +91,7 @@ export default function SettingsPage() {
           </Card>
 
           <Card className="p-6">
-            <h2 className="font-semibold text-gray-800 mb-4">Address</h2>
+            <h2 className="font-semibold text-gray-800 dark:text-gray-200 mb-4">Address</h2>
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
                 <Input label="Street" {...register("address.street")} />
@@ -103,14 +103,14 @@ export default function SettingsPage() {
           </Card>
 
           <Card className="p-6">
-            <h2 className="font-semibold text-gray-800 mb-1">Tax Settings</h2>
-            <p className="text-sm text-gray-400 mb-5">Choose how tax is applied across your store</p>
+            <h2 className="font-semibold text-gray-800 dark:text-gray-200 mb-1">Tax Settings</h2>
+            <p className="text-sm text-gray-400 dark:text-gray-500 mb-5">Choose how tax is applied across your store</p>
             <div className="space-y-4">
-              <label className="flex items-center justify-between p-4 border-2 rounded-xl cursor-pointer transition-all hover:border-gray-300"
+              <label className="flex items-center justify-between p-4 border-2 rounded-xl cursor-pointer transition-all hover:border-gray-300 dark:hover:border-gray-500"
                 style={{ borderColor: taxEnabled ? "#4F46E5" : undefined, background: taxEnabled ? "#EEF2FF" : undefined }}>
                 <div>
-                  <p className="font-medium text-sm text-gray-800">Enable store-wide tax rate</p>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className="font-medium text-sm text-gray-800 dark:text-gray-200">Enable store-wide tax rate</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                     {taxEnabled ? "All products use the default rate below (can override per product)" : "Tax rate is set individually on each product"}
                   </p>
                 </div>
@@ -123,28 +123,28 @@ export default function SettingsPage() {
 
               {taxEnabled && (
                 <div className="max-w-xs pl-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Default Tax Rate</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Default Tax Rate</label>
                   <div className="relative">
                     <input
                       type="number"
                       min="0"
                       max="100"
                       step="0.01"
-                      className="w-full px-3 py-2 pr-8 rounded-lg border border-gray-200 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+                      className="w-full px-3 py-2 pr-8 rounded-lg border border-gray-200 dark:border-gray-600 text-sm outline-none focus:border-primary-500 dark:focus:border-primary-400 focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900/30 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                       {...register("settings.defaultTaxRate", { valueAsNumber: true })}
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">%</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm">%</span>
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">Applied to all products unless overridden on the product itself</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Applied to all products unless overridden on the product itself</p>
                 </div>
               )}
             </div>
           </Card>
 
           <Card className="p-6">
-            <h2 className="font-semibold text-gray-800 mb-4">Invoice Settings</h2>
+            <h2 className="font-semibold text-gray-800 dark:text-gray-200 mb-4">Invoice Settings</h2>
             <Input label="Invoice Prefix" placeholder="INV" {...register("invoicePrefix")} />
-            <p className="text-xs text-gray-400 mt-1">Example: INV-202506-0001</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Example: INV-202506-0001</p>
           </Card>
 
           <div className="flex justify-end">

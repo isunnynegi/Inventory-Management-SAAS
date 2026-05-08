@@ -52,8 +52,8 @@ export default function SuppliersPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Suppliers</h1>
-          <p className="text-sm text-gray-500">Manage your suppliers</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Suppliers</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Manage your suppliers</p>
         </div>
         {isAdmin() && (
           <Button onClick={() => { reset({}); setModal({ mode: "add" }); }}>
@@ -62,10 +62,10 @@ export default function SuppliersPage() {
         )}
       </div>
       <Card>
-        <div className="p-4 border-b border-gray-50">
+        <div className="p-4 border-b border-gray-50 dark:border-gray-700">
           <div className="relative max-w-xs">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-primary-500"
+            <input className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 dark:focus:border-primary-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
               placeholder="Search..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
           </div>
         </div>

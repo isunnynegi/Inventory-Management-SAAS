@@ -10,6 +10,7 @@
     --shadow-lg: 0 12px 32px rgba(15,23,42,.10), 0 4px 8px rgba(15,23,42,.04);
   }
   body { @apply bg-gray-50 text-gray-900 antialiased; }
+  .dark body { @apply bg-gray-900 text-gray-50; }
   * { box-sizing: border-box; }
 }
 
@@ -47,4 +48,18 @@
 
   /* Monospace utility */
   .mono { font-family: var(--font-mono); }
+
+  /* Dark mode overrides for CSS-layer component classes */
+  .dark .card { @apply bg-gray-800 border-gray-700; }
+  .dark .input { @apply bg-gray-800 border-gray-600 text-gray-100; }
+  .dark .input:focus { @apply border-primary-500 ring-primary-500/20; }
+  .dark .btn-secondary { @apply bg-gray-700 text-gray-200 border-gray-600 hover:bg-gray-600; }
+  .dark .btn-danger { @apply hover:bg-red-700; }
+  .dark .field-label { @apply text-gray-400; }
+  .dark .label { @apply text-gray-300; }
+  .dark .badge-gray { @apply bg-gray-700 text-gray-300; }
+  .dark .badge-blue { @apply bg-blue-900/40 text-blue-300; }
+  .dark .badge-green { @apply bg-emerald-900/40 text-emerald-300; }
+  .dark .badge-yellow { @apply bg-amber-900/40 text-amber-300; }
+  .dark .badge-red { @apply bg-red-900/40 text-red-300; }
 }

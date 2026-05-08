@@ -125,10 +125,10 @@ export default function OrganizationsPage() {
     <div className="space-y-5">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Organizations</h1>
-          <p className="text-sm text-gray-500">All registered stores on the platform.</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Organizations</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">All registered stores on the platform.</p>
         </div>
-        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+        <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer select-none">
           <input
             type="checkbox"
             checked={showDeleted}
@@ -172,41 +172,41 @@ export default function OrganizationsPage() {
           <>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="border-b border-gray-100 bg-gray-50/50">
+                <thead className="border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
                   <tr>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Store</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Type</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Email</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Joined</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Store</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Type</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Email</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Joined</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                   {orgs.map(org => (
-                    <tr key={org._id} className={`hover:bg-gray-50 transition-colors ${org.isDeleted ? "opacity-60" : ""}`}>
+                    <tr key={org._id} className={`hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors ${org.isDeleted ? "opacity-60" : ""}`}>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-md bg-primary-100 flex items-center justify-center flex-shrink-0">
-                            <Building2 size={13} className="text-primary-600" />
+                          <div className="w-7 h-7 rounded-md bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center flex-shrink-0">
+                            <Building2 size={13} className="text-primary-600 dark:text-primary-400" />
                           </div>
                           <div>
-                            <p className="font-medium text-gray-900 leading-tight">{org.name}</p>
-                            {org.gstin && <p className="text-[11px] text-gray-400 font-mono">{org.gstin}</p>}
+                            <p className="font-medium text-gray-900 dark:text-gray-100 leading-tight">{org.name}</p>
+                            {org.gstin && <p className="text-[11px] text-gray-400 dark:text-gray-500 font-mono">{org.gstin}</p>}
                           </div>
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <span className="capitalize text-gray-600">{STORE_TYPE_LABELS[org.storeType] ?? org.storeType}</span>
+                        <span className="capitalize text-gray-600 dark:text-gray-400">{STORE_TYPE_LABELS[org.storeType] ?? org.storeType}</span>
                       </td>
-                      <td className="py-3 px-4 text-gray-500">{org.email || "—"}</td>
+                      <td className="py-3 px-4 text-gray-500 dark:text-gray-400">{org.email || "—"}</td>
                       <td className="py-3 px-4">
                         {org.isDeleted
                           ? <Badge color="red">Deleted</Badge>
                           : <Badge color={org.isActive ? "green" : "red"}>{org.isActive ? "Active" : "Inactive"}</Badge>
                         }
                       </td>
-                      <td className="py-3 px-4 text-gray-400 text-xs">{format(new Date(org.createdAt), "dd MMM yyyy")}</td>
+                      <td className="py-3 px-4 text-gray-400 dark:text-gray-500 text-xs">{format(new Date(org.createdAt), "dd MMM yyyy")}</td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-1">
                           {!org.isDeleted && (
@@ -246,17 +246,17 @@ export default function OrganizationsPage() {
 
             {/* Pagination */}
             {meta.pages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-                <p className="text-xs text-gray-400">
+              <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-gray-700">
+                <p className="text-xs text-gray-400 dark:text-gray-500">
                   Showing {orgs.length} of {meta.total} organizations
                 </p>
                 <div className="flex gap-1">
                   <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                    className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50">
+                    className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-600 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300">
                     Previous
                   </button>
                   <button onClick={() => setPage(p => Math.min(meta.pages, p + 1))} disabled={page === meta.pages}
-                    className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50">
+                    className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-600 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300">
                     Next
                   </button>
                 </div>

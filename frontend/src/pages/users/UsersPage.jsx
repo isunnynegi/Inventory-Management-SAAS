@@ -46,7 +46,7 @@ export default function UsersPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <div><h1 className="text-xl font-bold text-gray-900">Team</h1><p className="text-sm text-gray-500">Manage your team members</p></div>
+        <div><h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Team</h1><p className="text-sm text-gray-500 dark:text-gray-400">Manage your team members</p></div>
         <Button onClick={() => { reset({ role: "staff" }); setModal(true); }}><Plus size={16} /> Invite User</Button>
       </div>
       <Card>

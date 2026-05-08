@@ -80,9 +80,9 @@ export default function Sidebar({ collapsed, setCollapsed }) {
   const nav = superAdmin ? SUPERADMIN_NAV : STORE_NAV;
 
   return (
-    <aside className={`fixed left-0 top-0 h-full bg-white border-r border-gray-100 flex flex-col transition-all duration-200 z-30 ${collapsed ? "w-16" : "w-[220px]"}`}>
+    <aside className={`fixed left-0 top-0 h-full bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex flex-col transition-all duration-200 z-30 ${collapsed ? "w-16" : "w-[220px]"}`}>
       {/* Logo / identity chip */}
-      <div className={`flex items-center h-[60px] border-b border-gray-100 flex-shrink-0 ${collapsed ? "justify-center px-3" : "px-4 gap-3"}`}>
+      <div className={`flex items-center h-[60px] border-b border-gray-100 dark:border-gray-800 flex-shrink-0 ${collapsed ? "justify-center px-3" : "px-4 gap-3"}`}>
         <div className={`w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 ${superAdmin ? "bg-violet-600" : "bg-primary-600"}`}>
           {superAdmin
             ? <ShieldCheck size={14} className="text-white" />
@@ -93,13 +93,13 @@ export default function Sidebar({ collapsed, setCollapsed }) {
           <div className="min-w-0">
             {superAdmin ? (
               <>
-                <p className="text-[13px] font-semibold text-gray-900 truncate leading-tight">StockKart</p>
+                <p className="text-[13px] font-semibold text-gray-900 dark:text-gray-100 truncate leading-tight">StockKart</p>
                 <p className="text-[10px] text-violet-500 font-medium truncate">Platform Admin</p>
               </>
             ) : (
               <>
-                <p className="text-[13px] font-semibold text-gray-900 truncate leading-tight">{organization?.name || "StockKart"}</p>
-                <p className="text-[10px] text-gray-400 capitalize truncate">{organization?.storeType || "store"}</p>
+                <p className="text-[13px] font-semibold text-gray-900 dark:text-gray-100 truncate leading-tight">{organization?.name || "StockKart"}</p>
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 capitalize truncate">{organization?.storeType || "store"}</p>
               </>
             )}
           </div>
@@ -116,7 +116,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
           return (
             <div key={gi}>
               {group.section && !collapsed && (
-                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-2 mb-1">{group.section}</p>
+                <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-2 mb-1">{group.section}</p>
               )}
               <div className="space-y-0.5">
                 {visibleItems.map(item => {
@@ -129,9 +129,9 @@ export default function Sidebar({ collapsed, setCollapsed }) {
                         ${collapsed ? "justify-center w-10 h-10 mx-auto" : "gap-2.5 px-2.5 py-2"}
                         ${isActive
                           ? superAdmin
-                            ? "bg-violet-50 text-violet-700"
-                            : "bg-primary-50 text-primary-700"
-                          : "text-gray-500 hover:bg-gray-50 hover:text-gray-800"
+                            ? "bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400"
+                            : "bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400"
+                          : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200"
                         }`
                       }
                     >
@@ -149,7 +149,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       {/* Collapse toggle */}
       <button
         onClick={() => setCollapsed(c => !c)}
-        className="flex items-center justify-center h-10 border-t border-gray-100 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors flex-shrink-0"
+        className="flex items-center justify-center h-10 border-t border-gray-100 dark:border-gray-800 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex-shrink-0"
       >
         {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
       </button>

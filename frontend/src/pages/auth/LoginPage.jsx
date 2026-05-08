@@ -35,7 +35,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fafbfc] flex">
+    <div className="min-h-screen bg-[#fafbfc] dark:bg-gray-950 flex">
       {/* Left panel — branding */}
       <div className="hidden lg:flex flex-col justify-between w-[420px] bg-primary-600 p-10 flex-shrink-0">
         <div className="flex items-center gap-2.5">
@@ -72,8 +72,8 @@ export default function LoginPage() {
             <span className="font-bold text-gray-900 text-lg">StockKart</span>
           </div>
 
-          <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Sign in</h1>
-          <p className="text-sm text-gray-500 mt-1 mb-8">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 tracking-tight">Sign in</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-8">
             New here? <Link to="/register" className="text-primary-600 font-medium hover:underline">Create a free account</Link>
           </p>
 

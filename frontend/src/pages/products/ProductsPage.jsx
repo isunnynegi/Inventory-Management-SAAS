@@ -99,8 +99,8 @@ export default function ProductsPage() {
         {/* Page header */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-[22px] font-semibold tracking-tight text-gray-900">Inventory</h1>
-            <p className="text-sm text-gray-400 mt-0.5">
+            <h1 className="text-[22px] font-semibold tracking-tight text-gray-900 dark:text-gray-100">Inventory</h1>
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">
               {totalDocs} products · {organization?.storeType ? (organization.storeType.charAt(0).toUpperCase() + organization.storeType.slice(1)) : "General"} catalog
             </p>
           </div>
@@ -121,12 +121,12 @@ export default function ProductsPage() {
         </div>
 
         {/* Filter bar */}
-        <div className="bg-white border border-gray-100 rounded-xl">
-          <div className="flex items-center gap-2.5 p-3 border-b border-gray-50">
+        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl">
+          <div className="flex items-center gap-2.5 p-3 border-b border-gray-50 dark:border-gray-700">
             <div className="relative flex-1 max-w-xs">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
-                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition"
+                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 dark:focus:border-primary-400 focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900/30 transition bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                 placeholder="Search products, SKU, barcode…"
                 value={search}
                 onChange={e => { setSearch(e.target.value); setPage(1); }}
@@ -135,7 +135,7 @@ export default function ProductsPage() {
             <select
               value={catFilter}
               onChange={e => { setCatFilter(e.target.value); setSubCatFilter("all"); setPage(1); }}
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-primary-500 bg-white text-gray-700"
+              className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 dark:focus:border-primary-400 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200"
             >
               <option value="all">All categories</option>
               {categories.map(c => <option key={c._id || c.id} value={c._id || c.id}>{c.name}</option>)}
@@ -144,13 +144,13 @@ export default function ProductsPage() {
               <select
                 value={subCatFilter}
                 onChange={e => { setSubCatFilter(e.target.value); setPage(1); }}
-                className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-primary-500 bg-white text-gray-700"
+                className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 dark:focus:border-primary-400 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200"
               >
                 <option value="all">All subcategories</option>
                 {subcategories.map(s => <option key={s.id || s._id} value={s.name}>{s.name}</option>)}
               </select>
             )}
-            <div className="ml-auto flex items-center gap-1 p-1 bg-gray-50 rounded-lg border border-gray-100">
+            <div className="ml-auto flex items-center gap-1 p-1 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600">
               <button onClick={() => setView("table")}
                 className={`p-1.5 rounded ${view === "table" ? "bg-white shadow-sm text-primary-600" : "text-gray-400 hover:text-gray-600"} transition-colors`}>
                 <LayoutList size={15} />
@@ -167,20 +167,20 @@ export default function ProductsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-50">
+                  <tr className="border-b border-gray-50 dark:border-gray-700">
                     <th className="w-9 px-4 py-3"><input type="checkbox" className="rounded accent-primary-600" /></th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Product</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">SKU / Barcode</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Brand</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Cost</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Price</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Stock</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Product</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">SKU / Barcode</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Brand</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cost</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Price</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Stock</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
                     <th className="px-4 py-3 w-16"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                   {isLoading && (
                     <tr><td colSpan={10} className="py-16 text-center text-sm text-gray-400">Loading…</td></tr>
                   )}
@@ -198,7 +198,7 @@ export default function ProductsPage() {
                     const brand = getAttr(p, "brand");
                     const subcategory = getAttr(p, "subcategory");
                     return (
-                      <tr key={p.id} className="hover:bg-gray-50/50 transition-colors group">
+                      <tr key={p.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors group">
                         <td className="px-4 py-3"><input type="checkbox" className="rounded accent-primary-600" /></td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2.5">
@@ -206,20 +206,20 @@ export default function ProductsPage() {
                               {p.name.charAt(0).toUpperCase()}
                             </div>
                             <div>
-                              <p className="font-medium text-gray-900 leading-tight">{p.name}</p>
-                              {subcategory && <p className="text-[11px] text-gray-400 mt-0.5">{subcategory}</p>}
+                              <p className="font-medium text-gray-900 dark:text-gray-100 leading-tight">{p.name}</p>
+                              {subcategory && <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{subcategory}</p>}
                             </div>
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          {p.sku && <p className="font-mono text-[11px] text-gray-700">{p.sku}</p>}
-                          {p.barcode && <p className="font-mono text-[10.5px] text-gray-400">{p.barcode}</p>}
-                          {!p.sku && !p.barcode && <span className="text-gray-300">—</span>}
+                          {p.sku && <p className="font-mono text-[11px] text-gray-700 dark:text-gray-300">{p.sku}</p>}
+                          {p.barcode && <p className="font-mono text-[10.5px] text-gray-400 dark:text-gray-500">{p.barcode}</p>}
+                          {!p.sku && !p.barcode && <span className="text-gray-300 dark:text-gray-600">—</span>}
                         </td>
-                        <td className="px-4 py-3 text-gray-600 text-sm">{p.categoryId?.name || "—"}</td>
-                        <td className="px-4 py-3 text-gray-600 text-sm">{brand || "—"}</td>
-                        <td className="px-4 py-3 text-right text-sm text-gray-500">{fmtINR(p.purchasePrice)}</td>
-                        <td className="px-4 py-3 text-right text-sm font-semibold text-gray-900">{fmtINR(p.sellingPrice)}</td>
+                        <td className="px-4 py-3 text-gray-600 dark:text-gray-400 text-sm">{p.categoryId?.name || "—"}</td>
+                        <td className="px-4 py-3 text-gray-600 dark:text-gray-400 text-sm">{brand || "—"}</td>
+                        <td className="px-4 py-3 text-right text-sm text-gray-500 dark:text-gray-400">{fmtINR(p.purchasePrice)}</td>
+                        <td className="px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-gray-100">{fmtINR(p.sellingPrice)}</td>
                         <td className="px-4 py-3 text-right">
                           <span className={`font-semibold text-sm ${TONE_STOCK[tone]}`}>{p.stock}</span>
                           <span className="text-[11px] text-gray-400 ml-1">{p.unit}</span>
@@ -268,15 +268,15 @@ export default function ProductsPage() {
                 const { tone } = stockStatus(p);
                 const brand = getAttr(p, "brand");
                 return (
-                  <div key={p.id} className="bg-white rounded-xl border border-gray-100 p-3 hover:shadow-md transition-shadow group cursor-pointer" onClick={() => isAdmin() && openEdit(p)}>
-                    <div className="w-full aspect-square rounded-lg bg-gray-50 flex items-center justify-center text-4xl mb-3">
+                  <div key={p.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-3 hover:shadow-md transition-shadow group cursor-pointer" onClick={() => isAdmin() && openEdit(p)}>
+                    <div className="w-full aspect-square rounded-lg bg-gray-50 dark:bg-gray-700 flex items-center justify-center text-4xl mb-3">
                       {p.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-400 truncate">{brand || "—"}</span>
                       <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${TONE_PILL[tone]}`}>{p.stock}</span>
                     </div>
-                    <p className="text-sm font-medium text-gray-900 truncate leading-tight">{p.name}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate leading-tight">{p.name}</p>
                     <p className="text-sm font-semibold text-primary-600 mt-1">{fmtINR(p.sellingPrice)}</p>
                   </div>
                 );
@@ -286,13 +286,13 @@ export default function ProductsPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-50 text-sm text-gray-500">
+            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-50 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400">
               <span>Page {page} of {totalPages}</span>
               <div className="flex gap-1.5">
                 <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                  className="px-3 py-1.5 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors text-xs">Prev</button>
+                  className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs dark:text-gray-300">Prev</button>
                 <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                  className="px-3 py-1.5 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors text-xs">Next</button>
+                  className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs dark:text-gray-300">Next</button>
               </div>
             </div>
           )}

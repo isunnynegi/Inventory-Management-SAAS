@@ -14,4 +14,5 @@ export const useAuthStore = create(devtools((set, get) => ({
   setLoading: v => set({ isLoading: v }),
   updateOrg: org => set(s => ({ organization: { ...s.organization, ...org } })),
   isAdmin: () => ["admin","superAdmin"].includes(get().user?.role),
+  isSuperAdmin: () => get().user?.role === "superAdmin",
 }), { name: "AuthStore" }));

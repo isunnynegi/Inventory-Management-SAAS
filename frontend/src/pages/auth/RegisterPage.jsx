@@ -2,8 +2,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "../../stores/authStore.js";
-import { authApi } from "../../api/index.js";
+import { authApi, orgApi } from "../../api/index.js";
 import toast from "react-hot-toast";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
@@ -19,22 +20,35 @@ const schema = z.object({
   storeType: z.string(),
 });
 
-const STORE_TYPES = [
-  { v: "general",     l: "General Store" },
-  { v: "electronics", l: "Electronics" },
-  { v: "grocery",     l: "Grocery / Supermarket" },
-  { v: "pharmacy",    l: "Pharmacy / Medical" },
-  { v: "clothing",    l: "Clothing / Apparel" },
-  { v: "hardware",    l: "Hardware / Tools" },
-  { v: "sanitary",    l: "Sanitary / Plumbing" },
-  { v: "other",       l: "Other" },
-];
+// Display labels for each backend enum value — extend here when new types are added
+const STORE_TYPE_LABELS = {
+  general:     "General Store",
+  electronics: "Electronics",
+  electrical:  "Electrical / Wiring",
+  sanitary:    "Sanitary / Plumbing",
+  hardware:    "Hardware / Tools",
+  pharmacy:    "Pharmacy / Medical",
+  grocery:     "Grocery / Supermarket",
+  clothing:    "Clothing / Apparel",
+  other:       "Other",
+};
+
+const labelFor = (value) =>
+  STORE_TYPE_LABELS[value] ?? value.charAt(0).toUpperCase() + value.slice(1);
 
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const { setAuth } = useAuthStore();
   const nav = useNavigate();
+
+  const { data: storeTypesRes } = useQuery({
+    queryKey: ["store-types"],
+    queryFn: orgApi.storeTypes,
+    staleTime: Infinity,
+  });
+  const storeTypes = storeTypesRes?.data ?? Object.keys(STORE_TYPE_LABELS);
+
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
     defaultValues: { storeType: "general" },
@@ -112,7 +126,9 @@ export default function RegisterPage() {
                 <label className="field-label">Store type</label>
                 <select className="input appearance-none bg-white" {...register("storeType")}
                   style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center", paddingRight: "30px" }}>
-                  {STORE_TYPES.map(t => <option key={t.v} value={t.v}>{t.l}</option>)}
+                  {storeTypes.map(v => (
+                    <option key={v} value={v}>{labelFor(v)}</option>
+                  ))}
                 </select>
               </div>
             </div>

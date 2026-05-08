@@ -13,6 +13,12 @@ export const authApi = {
 export const orgApi = {
   get: () => api.get("/organizations/me").then(r),
   update: d => api.patch("/organizations/me", d).then(r),
+  storeTypes: () => api.get("/organizations/store-types").then(r),
+};
+export const platformApi = {
+  stats: () => api.get("/organizations/platform-stats").then(r),
+  listOrgs: p => api.get("/organizations", { params: p }).then(r),
+  toggleOrgStatus: (id, isActive) => api.patch(`/organizations/${id}/status`, { isActive }).then(r),
 };
 export const categoryApi = {
   list: p => api.get("/categories", { params: p }).then(r),

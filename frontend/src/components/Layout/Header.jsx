@@ -1,4 +1,4 @@
-import { Bell, LogOut, User, ChevronDown } from "lucide-react";
+import { Bell, LogOut, User, ChevronDown, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { useAuthStore } from "../../stores/authStore.js";
 import { useNavigate } from "react-router-dom";
@@ -6,7 +6,8 @@ import { authApi } from "../../api/index.js";
 import toast from "react-hot-toast";
 
 export default function Header({ sidebarWidth }) {
-  const { user, clearAuth } = useAuthStore();
+  const { user, clearAuth, isSuperAdmin } = useAuthStore();
+  const superAdmin = isSuperAdmin();
   const [open, setOpen] = useState(false);
   const nav = useNavigate();
 
@@ -27,12 +28,17 @@ export default function Header({ sidebarWidth }) {
         <div className="relative">
           <button onClick={() => setOpen(o => !o)}
             className="flex items-center gap-2.5 py-1.5 px-3 rounded-lg hover:bg-gray-50 transition">
-            <div className="w-7 h-7 rounded-full bg-primary-600 flex items-center justify-center">
-              <span className="text-white text-xs font-bold">{user?.name?.[0]?.toUpperCase()}</span>
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center ${superAdmin ? "bg-violet-600" : "bg-primary-600"}`}>
+              {superAdmin
+                ? <ShieldCheck size={14} className="text-white" />
+                : <span className="text-white text-xs font-bold">{user?.name?.[0]?.toUpperCase()}</span>
+              }
             </div>
             <div className="text-left hidden sm:block">
               <p className="text-sm font-medium text-gray-700 leading-tight">{user?.name}</p>
-              <p className="text-xs text-gray-400 capitalize">{user?.role}</p>
+              <p className={`text-xs capitalize font-medium ${superAdmin ? "text-violet-500" : "text-gray-400"}`}>
+                {superAdmin ? "Platform Admin" : user?.role}
+              </p>
             </div>
             <ChevronDown size={14} className="text-gray-400" />
           </button>

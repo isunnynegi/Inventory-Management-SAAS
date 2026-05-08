@@ -22,6 +22,7 @@ import InvoicesPage from "./pages/invoices/InvoicesPage.jsx";
 import ReportsPage from "./pages/reports/ReportsPage.jsx";
 import UsersPage from "./pages/users/UsersPage.jsx";
 import SettingsPage from "./pages/settings/SettingsPage.jsx";
+import OrganizationsPage from "./pages/organizations/OrganizationsPage.jsx";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -73,6 +74,11 @@ export default function App() {
           <Route element={<ProtectedRoute adminOnly />}>
             <Route element={<Layout />}>
               <Route path="/users" element={<UsersPage />} />
+            </Route>
+          </Route>
+          <Route element={<ProtectedRoute superAdminOnly />}>
+            <Route element={<Layout />}>
+              <Route path="/organizations" element={<OrganizationsPage />} />
             </Route>
           </Route>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

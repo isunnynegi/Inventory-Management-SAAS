@@ -1,6 +1,7 @@
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { Loader2, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { forwardRef } from "react";
 
 export const cn = (...i) => twMerge(clsx(i));
 
@@ -21,41 +22,50 @@ export function Button({ children, variant="primary", size="md", loading, classN
   );
 }
 
-export function Input({ label, error, className, ...p }) {
-  return (
-    <div>
-      {label && <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>}
-      <input className={cn("w-full px-3 py-2 rounded-lg border text-sm outline-none transition",
+export const Input = forwardRef(({ label, error, className, ...p }, ref) => (
+  <div>
+    {label && <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>}
+    <input
+      ref={ref}
+      className={cn("w-full px-3 py-2 rounded-lg border text-sm outline-none transition",
         error ? "border-red-400 focus:ring-2 focus:ring-red-100" : "border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100",
-        className)} {...p} />
-      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
-    </div>
-  );
-}
+        className)}
+      {...p}
+    />
+    {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+  </div>
+));
+Input.displayName = "Input";
 
-export function Select({ label, error, children, className, ...p }) {
-  return (
-    <div>
-      {label && <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>}
-      <select className={cn("w-full px-3 py-2 rounded-lg border text-sm outline-none bg-white transition",
-        error ? "border-red-400" : "border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100", className)} {...p}>
-        {children}
-      </select>
-      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
-    </div>
-  );
-}
+export const Select = forwardRef(({ label, error, children, className, ...p }, ref) => (
+  <div>
+    {label && <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>}
+    <select
+      ref={ref}
+      className={cn("w-full px-3 py-2 rounded-lg border text-sm outline-none bg-white transition",
+        error ? "border-red-400" : "border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100", className)}
+      {...p}
+    >
+      {children}
+    </select>
+    {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+  </div>
+));
+Select.displayName = "Select";
 
-export function Textarea({ label, error, className, ...p }) {
-  return (
-    <div>
-      {label && <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>}
-      <textarea className={cn("w-full px-3 py-2 rounded-lg border text-sm outline-none resize-none transition",
-        error ? "border-red-400" : "border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100", className)} {...p} />
-      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
-    </div>
-  );
-}
+export const Textarea = forwardRef(({ label, error, className, ...p }, ref) => (
+  <div>
+    {label && <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>}
+    <textarea
+      ref={ref}
+      className={cn("w-full px-3 py-2 rounded-lg border text-sm outline-none resize-none transition",
+        error ? "border-red-400" : "border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100", className)}
+      {...p}
+    />
+    {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+  </div>
+));
+Textarea.displayName = "Textarea";
 
 export function Card({ children, className, ...p }) {
   return <div className={cn("bg-white rounded-xl border border-gray-100 shadow-sm", className)} {...p}>{children}</div>;

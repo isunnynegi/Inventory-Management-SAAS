@@ -1,0 +1,65 @@
+import axios from "axios";
+
+const BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
+
+// Separate axios instance for storefront — uses customer tokens, not staff tokens
+export const sfApi = axios.create({
+  baseURL: BASE,
+  withCredentials: true,
+  headers: { "Content-Type": "application/json" },
+  timeout: 15000,
+});
+
+sfApi.interceptors.request.use(cfg => {
+  const token = window.__sfAccessToken;
+  if (token) cfg.headers.Authorization = `Bearer ${token}`;
+  return cfg;
+}, err => Promise.reject(err));
+
+let refreshing = false, queue = [];
+const flush = (err, token) => { queue.forEach(p => err ? p.reject(err) : p.resolve(token)); queue = []; };
+
+sfApi.interceptors.response.use(r => r, async err => {
+  const orig = err.config;
+  if (err.response?.status === 401 && !orig._retry && orig._slug) {
+    if (refreshing) return new Promise((res, rej) => queue.push({ resolve: res, reject: rej }))
+      .then(t => { orig.headers.Authorization = `Bearer ${t}`; return sfApi(orig); });
+    orig._retry = true; refreshing = true;
+    try {
+      const { data } = await axios.post(`${BASE}/store/${orig._slug}/auth/refresh`, {}, { withCredentials: true });
+      const t = data.data.accessToken;
+      window.__sfAccessToken = t; flush(null, t);
+      orig.headers.Authorization = `Bearer ${t}`;
+      return sfApi(orig);
+    } catch (e) {
+      flush(e, null); window.__sfAccessToken = null;
+      window.dispatchEvent(new CustomEvent("sf:logout", { detail: { slug: orig._slug } }));
+      return Promise.reject(e);
+    } finally { refreshing = false; }
+  }
+  return Promise.reject(err);
+});
+
+const r = (res) => res.data;
+
+export const storeApi = (slug) => {
+  const withSlug = (cfg) => ({ ...cfg, _slug: slug });
+  return {
+    getInfo: () => sfApi.get(`/store/${slug}/`, withSlug({})).then(r),
+    listProducts: (p) => sfApi.get(`/store/${slug}/products`, { params: p, ...withSlug({}) }).then(r),
+    getProduct: (id) => sfApi.get(`/store/${slug}/products/${id}`, withSlug({})).then(r),
+    listCategories: () => sfApi.get(`/store/${slug}/categories`, withSlug({})).then(r),
+    register: (d) => sfApi.post(`/store/${slug}/auth/register`, d, withSlug({})).then(r),
+    login: (d) => sfApi.post(`/store/${slug}/auth/login`, d, withSlug({})).then(r),
+    logout: () => sfApi.post(`/store/${slug}/auth/logout`, {}, withSlug({})).then(r),
+    getMe: () => sfApi.get(`/store/${slug}/auth/me`, withSlug({})).then(r),
+    updateMe: (d) => sfApi.patch(`/store/${slug}/auth/me`, d, withSlug({})).then(r),
+    addAddress: (d) => sfApi.post(`/store/${slug}/auth/me/addresses`, d, withSlug({})).then(r),
+    removeAddress: (id) => sfApi.delete(`/store/${slug}/auth/me/addresses/${id}`, withSlug({})).then(r),
+    createOrder: (d) => sfApi.post(`/store/${slug}/orders`, d, withSlug({})).then(r),
+    listOrders: (p) => sfApi.get(`/store/${slug}/orders`, { params: p, ...withSlug({}) }).then(r),
+    getOrder: (id) => sfApi.get(`/store/${slug}/orders/${id}`, withSlug({})).then(r),
+    initiateJuspay: (d) => sfApi.post(`/store/${slug}/payment/juspay/initiate`, d, withSlug({})).then(r),
+    submitUtr: (d) => sfApi.post(`/store/${slug}/payment/utr`, d, withSlug({})).then(r),
+  };
+};

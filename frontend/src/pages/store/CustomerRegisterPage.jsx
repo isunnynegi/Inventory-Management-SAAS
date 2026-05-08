@@ -1,0 +1,93 @@
+import { useState } from "react";
+import { Link, useOutletContext, useNavigate, useSearchParams } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
+import { useCustomerStore } from "../../stores/storefrontStore.js";
+import toast from "react-hot-toast";
+
+export default function CustomerRegisterPage() {
+  const { store, slug, api } = useOutletContext();
+  const nav = useNavigate();
+  const [searchParams] = useSearchParams();
+  const nextUrl = searchParams.get("next") || `/store/${slug}`;
+  const setCustomer = useCustomerStore(s => s.setCustomer);
+
+  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
+  const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const e = {};
+    if (!form.name || form.name.trim().length < 2) e.name = "Name is required";
+    if (!form.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "Enter a valid email";
+    if (!form.password || form.password.length < 8) e.password = "Minimum 8 characters";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+    setLoading(true);
+    try {
+      const res = await api.register(form);
+      setCustomer({ customer: res.data.customer, accessToken: res.data.accessToken });
+      window.__sfAccessToken = res.data.accessToken;
+      toast.success(`Welcome, ${res.data.customer.name}!`);
+      nav(nextUrl, { replace: true });
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Registration failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-sm mx-auto py-8">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-7">
+        <h1 className="text-xl font-bold text-gray-900 mb-1">Create account</h1>
+        <p className="text-sm text-gray-500 mb-6">
+          Already have an account?{" "}
+          <Link to={`/store/${slug}/login${nextUrl !== `/store/${slug}` ? `?next=${nextUrl}` : ""}`}
+            className="text-primary-600 font-medium hover:underline">
+            Sign in
+          </Link>
+        </p>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {[
+            { name: "name", label: "Full name", type: "text", placeholder: "Rahul Sharma", autoComplete: "name" },
+            { name: "email", label: "Email address", type: "email", placeholder: "you@email.com", autoComplete: "email" },
+            { name: "phone", label: "Phone (optional)", type: "tel", placeholder: "9876543210", autoComplete: "tel" },
+          ].map(f => (
+            <div key={f.name}>
+              <label className="block text-xs font-medium text-gray-600 mb-1">{f.label}</label>
+              <input type={f.type} autoComplete={f.autoComplete} placeholder={f.placeholder}
+                value={form[f.name]} onChange={e => setForm(p => ({ ...p, [f.name]: e.target.value }))}
+                className={`w-full px-3 py-2 text-sm border rounded-lg outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition ${errors[f.name] ? "border-red-400" : "border-gray-200"}`} />
+              {errors[f.name] && <p className="mt-1 text-xs text-red-500">{errors[f.name]}</p>}
+            </div>
+          ))}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Password</label>
+            <div className="relative">
+              <input type={showPw ? "text" : "password"} autoComplete="new-password" placeholder="Min. 8 characters"
+                value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
+                className={`w-full px-3 pr-10 py-2 text-sm border rounded-lg outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition ${errors.password ? "border-red-400" : "border-gray-200"}`} />
+              <button type="button" onClick={() => setShowPw(s => !s)}
+                className="absolute inset-y-0 right-3 text-gray-400 hover:text-gray-600">
+                {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
+          </div>
+          <button type="submit" disabled={loading}
+            className="w-full py-2.5 bg-primary-600 text-white text-sm font-semibold rounded-lg hover:bg-primary-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
+            {loading && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+            Create account
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}

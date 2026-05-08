@@ -23,6 +23,15 @@ import ReportsPage from "./pages/reports/ReportsPage.jsx";
 import UsersPage from "./pages/users/UsersPage.jsx";
 import SettingsPage from "./pages/settings/SettingsPage.jsx";
 import OrganizationsPage from "./pages/organizations/OrganizationsPage.jsx";
+import StorefrontOrdersPage from "./pages/storefrontOrders/StorefrontOrdersPage.jsx";
+import StorefrontLayout from "./pages/store/StorefrontLayout.jsx";
+import StorePage from "./pages/store/StorePage.jsx";
+import CartPage from "./pages/store/CartPage.jsx";
+import CheckoutPage from "./pages/store/CheckoutPage.jsx";
+import OrderConfirmPage from "./pages/store/OrderConfirmPage.jsx";
+import CustomerLoginPage from "./pages/store/CustomerLoginPage.jsx";
+import CustomerRegisterPage from "./pages/store/CustomerRegisterPage.jsx";
+import CustomerAccountPage from "./pages/store/CustomerAccountPage.jsx";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -74,12 +83,23 @@ export default function App() {
           <Route element={<ProtectedRoute adminOnly />}>
             <Route element={<Layout />}>
               <Route path="/users" element={<UsersPage />} />
+              <Route path="/storefront-orders" element={<StorefrontOrdersPage />} />
             </Route>
           </Route>
           <Route element={<ProtectedRoute superAdminOnly />}>
             <Route element={<Layout />}>
               <Route path="/organizations" element={<OrganizationsPage />} />
             </Route>
+          </Route>
+          {/* Public storefront — no auth required */}
+          <Route path="/store/:slug" element={<StorefrontLayout />}>
+            <Route index element={<StorePage />} />
+            <Route path="cart" element={<CartPage />} />
+            <Route path="checkout" element={<CheckoutPage />} />
+            <Route path="order/:orderId" element={<OrderConfirmPage />} />
+            <Route path="login" element={<CustomerLoginPage />} />
+            <Route path="register" element={<CustomerRegisterPage />} />
+            <Route path="account" element={<CustomerAccountPage />} />
           </Route>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

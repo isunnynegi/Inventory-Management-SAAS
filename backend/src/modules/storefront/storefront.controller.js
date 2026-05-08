@@ -1,0 +1,432 @@
+import jwt from "jsonwebtoken";
+import Organization from "../organization/organization.model.js";
+import Product from "../product/product.model.js";
+import Category from "../category/category.model.js";
+import StorefrontCustomer from "./storefrontCustomer.model.js";
+import StorefrontOrder from "../storefrontOrder/storefrontOrder.model.js";
+import { ApiError } from "../../utils/ApiError.js";
+import { asyncHandler } from "../../utils/asyncHandler.js";
+import { ApiResponse } from "../../utils/ApiResponse.js";
+import { createJuspayOrder } from "../../utils/juspay.js";
+import logger from "../../utils/logger.js";
+
+const CUSTOMER_JWT_SECRET = process.env.CUSTOMER_JWT_SECRET || process.env.JWT_SECRET;
+const CUSTOMER_REFRESH_SECRET = process.env.CUSTOMER_REFRESH_SECRET || process.env.JWT_REFRESH_SECRET;
+
+function signCustomerToken(customerId, orgId) {
+  return jwt.sign({ sub: customerId, organizationId: orgId, type: "storefront_customer" }, CUSTOMER_JWT_SECRET, { expiresIn: "7d" });
+}
+function signCustomerRefresh(customerId) {
+  return jwt.sign({ sub: customerId, type: "storefront_customer" }, CUSTOMER_REFRESH_SECRET, { expiresIn: "30d" });
+}
+
+async function resolveOrg(slug) {
+  const org = await Organization.findOne({ slug, isActive: true }).lean();
+  if (!org) throw ApiError.notFound("Store not found");
+  if (!org.storefront?.enabled) throw ApiError.notFound("Store not found");
+  return org;
+}
+
+// ── Public store info ─────────────────────────────────────────────────────────
+export const getStoreInfo = asyncHandler(async (req, res) => {
+  const org = await resolveOrg(req.params.slug);
+  return ApiResponse.ok(res, "Store info", {
+    id: org._id,
+    name: org.storeName || org.name,
+    slug: org.slug,
+    storeType: org.storeType,
+    logo: org.logo,
+    address: org.address,
+    phone: org.phone,
+    email: org.email,
+    currencySymbol: org.currencySymbol || "₹",
+    paymentMethods: org.storefront.paymentMethods || ["cash"],
+    deliveryEnabled: org.storefront.deliveryEnabled,
+    pickupEnabled: org.storefront.pickupEnabled,
+    deliveryCharge: org.storefront.deliveryCharge || 0,
+    freeDeliveryAbove: org.storefront.freeDeliveryAbove || 0,
+    upiId: org.storefront.upiId,
+    upiName: org.storefront.upiName,
+    juspayEnabled: !!(org.storefront.juspay?.enabled && org.storefront.juspay?.merchantId),
+  });
+});
+
+// ── Products ──────────────────────────────────────────────────────────────────
+export const listProducts = asyncHandler(async (req, res) => {
+  const org = await resolveOrg(req.params.slug);
+  const { search, categoryId, page = 1, limit = 24 } = req.query;
+
+  const filter = { organizationId: org._id, isActive: true, stock: { $gt: 0 } };
+  if (search) filter.name = { $regex: search, $options: "i" };
+  if (categoryId) filter.categoryId = categoryId;
+
+  const skip = (Number(page) - 1) * Number(limit);
+  const [products, total] = await Promise.all([
+    Product.find(filter)
+      .select("name sku image sellingPrice taxPercent unit stock categoryId attributes description")
+      .populate("categoryId", "name")
+      .sort({ name: 1 })
+      .skip(skip)
+      .limit(Number(limit))
+      .lean(),
+    Product.countDocuments(filter),
+  ]);
+
+  return ApiResponse.paginated(res, "Products", {
+    docs: products, totalDocs: total, limit: Number(limit),
+    page: Number(page), totalPages: Math.ceil(total / Number(limit)),
+  });
+});
+
+export const getProduct = asyncHandler(async (req, res) => {
+  const org = await resolveOrg(req.params.slug);
+  const product = await Product.findOne({ _id: req.params.productId, organizationId: org._id, isActive: true })
+    .populate("categoryId", "name")
+    .lean();
+  if (!product) throw ApiError.notFound("Product not found");
+  return ApiResponse.ok(res, "Product", product);
+});
+
+// ── Categories ────────────────────────────────────────────────────────────────
+export const listCategories = asyncHandler(async (req, res) => {
+  const org = await resolveOrg(req.params.slug);
+  const categories = await Category.find({ organizationId: org._id, parent: null })
+    .select("name description")
+    .sort("name")
+    .lean();
+  return ApiResponse.ok(res, "Categories", categories);
+});
+
+// ── Customer Auth ─────────────────────────────────────────────────────────────
+export const customerRegister = asyncHandler(async (req, res) => {
+  const org = await resolveOrg(req.params.slug);
+  const { name, email, password, phone } = req.body;
+
+  const existing = await StorefrontCustomer.findOne({ organizationId: org._id, email });
+  if (existing) throw ApiError.conflict("Email already registered at this store");
+
+  const customer = await StorefrontCustomer.create({ organizationId: org._id, name, email, password, phone });
+  const accessToken = signCustomerToken(customer._id, org._id);
+  const refresh = signCustomerRefresh(customer._id);
+  const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  await StorefrontCustomer.findByIdAndUpdate(customer._id, {
+    $push: { refreshTokens: { token: refresh, expiresAt: expires } },
+  });
+
+  res.cookie("sf_refresh", refresh, {
+    httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", expires,
+  });
+  return ApiResponse.created(res, "Account created", {
+    customer: { _id: customer._id, name: customer.name, email: customer.email },
+    accessToken,
+  });
+});
+
+export const customerLogin = asyncHandler(async (req, res) => {
+  const org = await resolveOrg(req.params.slug);
+  const { email, password } = req.body;
+
+  const customer = await StorefrontCustomer.findOne({ organizationId: org._id, email }).select("+password");
+  if (!customer || !(await customer.comparePassword(password))) {
+    throw ApiError.unauthorized("Invalid email or password");
+  }
+  if (!customer.isActive) throw ApiError.forbidden("Account deactivated");
+
+  const accessToken = signCustomerToken(customer._id, org._id);
+  const refresh = signCustomerRefresh(customer._id);
+  const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  await StorefrontCustomer.findByIdAndUpdate(customer._id, {
+    $push: { refreshTokens: { token: refresh, expiresAt: expires } },
+  });
+
+  res.cookie("sf_refresh", refresh, {
+    httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", expires,
+  });
+  return ApiResponse.ok(res, "Login successful", {
+    customer: { _id: customer._id, name: customer.name, email: customer.email, phone: customer.phone, addresses: customer.addresses },
+    accessToken,
+  });
+});
+
+export const customerLogout = asyncHandler(async (req, res) => {
+  const token = req.cookies.sf_refresh;
+  if (token) {
+    await StorefrontCustomer.findByIdAndUpdate(req.storefrontCustomer._id, {
+      $pull: { refreshTokens: { token } },
+    });
+  }
+  res.clearCookie("sf_refresh");
+  return ApiResponse.ok(res, "Logged out");
+});
+
+export const customerRefresh = asyncHandler(async (req, res) => {
+  const token = req.cookies.sf_refresh;
+  if (!token) throw ApiError.unauthorized("No refresh token");
+
+  let decoded;
+  try { decoded = jwt.verify(token, CUSTOMER_REFRESH_SECRET); }
+  catch { throw ApiError.unauthorized("Invalid or expired refresh token"); }
+
+  const customer = await StorefrontCustomer.findById(decoded.sub).select("+refreshTokens");
+  if (!customer) throw ApiError.unauthorized("Customer not found");
+
+  const stored = customer.refreshTokens.find(t => t.token === token && t.expiresAt > new Date());
+  if (!stored) throw ApiError.unauthorized("Refresh token revoked");
+
+  customer.refreshTokens = customer.refreshTokens.filter(t => t.token !== token);
+  const newRefresh = signCustomerRefresh(customer._id);
+  const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  customer.refreshTokens.push({ token: newRefresh, expiresAt: expires });
+  await customer.save({ validateBeforeSave: false });
+
+  const accessToken = signCustomerToken(customer._id, customer.organizationId);
+  res.cookie("sf_refresh", newRefresh, {
+    httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", expires,
+  });
+  return ApiResponse.ok(res, "Token refreshed", { accessToken });
+});
+
+export const getCustomerMe = asyncHandler(async (req, res) => {
+  const customer = await StorefrontCustomer.findById(req.storefrontCustomer._id).lean();
+  if (!customer) throw ApiError.notFound("Customer not found");
+  return ApiResponse.ok(res, "Profile", {
+    _id: customer._id, name: customer.name, email: customer.email,
+    phone: customer.phone, addresses: customer.addresses,
+  });
+});
+
+export const updateCustomerProfile = asyncHandler(async (req, res) => {
+  const { name, phone } = req.body;
+  const customer = await StorefrontCustomer.findByIdAndUpdate(
+    req.storefrontCustomer._id,
+    { name, phone },
+    { new: true, runValidators: true }
+  ).lean();
+  return ApiResponse.ok(res, "Profile updated", {
+    _id: customer._id, name: customer.name, email: customer.email,
+    phone: customer.phone, addresses: customer.addresses,
+  });
+});
+
+export const addAddress = asyncHandler(async (req, res) => {
+  const { label, name, phone, street, city, state, zip, isDefault } = req.body;
+  const customer = await StorefrontCustomer.findById(req.storefrontCustomer._id);
+  if (isDefault) customer.addresses.forEach(a => { a.isDefault = false; });
+  customer.addresses.push({ label: label || "Home", name, phone, street, city, state, zip, isDefault: !!isDefault });
+  await customer.save();
+  return ApiResponse.ok(res, "Address added", customer.addresses);
+});
+
+export const removeAddress = asyncHandler(async (req, res) => {
+  const customer = await StorefrontCustomer.findById(req.storefrontCustomer._id);
+  customer.addresses = customer.addresses.filter(a => a._id.toString() !== req.params.addressId);
+  await customer.save();
+  return ApiResponse.ok(res, "Address removed", customer.addresses);
+});
+
+// ── Orders ────────────────────────────────────────────────────────────────────
+let _orderCounter = Math.floor(Math.random() * 1000);
+
+function generateOrderNumber(orgSlug) {
+  _orderCounter = (_orderCounter + 1) % 100000;
+  const ts = Date.now().toString(36).toUpperCase().slice(-4);
+  const n = String(_orderCounter).padStart(4, "0");
+  return `${orgSlug.toUpperCase().slice(0, 4)}-${ts}${n}`;
+}
+
+export const createOrder = asyncHandler(async (req, res) => {
+  const org = await resolveOrg(req.params.slug);
+  const { items, fulfillmentType, deliveryAddress, paymentMethod, notes } = req.body;
+
+  if (!org.storefront.paymentMethods.includes(paymentMethod)) {
+    throw ApiError.badRequest("Payment method not supported by this store");
+  }
+  if (fulfillmentType === "delivery" && !org.storefront.deliveryEnabled) {
+    throw ApiError.badRequest("Delivery not available");
+  }
+  if (fulfillmentType === "pickup" && !org.storefront.pickupEnabled) {
+    throw ApiError.badRequest("Pickup not available");
+  }
+  if (fulfillmentType === "delivery" && !deliveryAddress?.street) {
+    throw ApiError.badRequest("Delivery address is required");
+  }
+
+  const productIds = items.map(i => i.productId);
+  const products = await Product.find({ _id: { $in: productIds }, organizationId: org._id, isActive: true }).lean();
+  const productMap = Object.fromEntries(products.map(p => [p._id.toString(), p]));
+
+  let subtotal = 0, taxTotal = 0;
+  const orderItems = [];
+  for (const item of items) {
+    const p = productMap[item.productId];
+    if (!p) throw ApiError.badRequest(`Product not found or unavailable`);
+    if (p.stock < item.qty) throw ApiError.badRequest(`Insufficient stock for "${p.name}"`);
+    const lineTotal = p.sellingPrice * item.qty;
+    const taxAmount = Number((lineTotal * (p.taxPercent / 100)).toFixed(2));
+    subtotal += lineTotal;
+    taxTotal += taxAmount;
+    orderItems.push({
+      productId: p._id,
+      name: p.name,
+      sku: p.sku,
+      image: p.image,
+      qty: item.qty,
+      unitPrice: p.sellingPrice,
+      taxPercent: p.taxPercent,
+      taxAmount,
+      lineTotal,
+    });
+  }
+
+  const deliveryCharge = (fulfillmentType === "delivery")
+    ? (org.storefront.freeDeliveryAbove > 0 && subtotal >= org.storefront.freeDeliveryAbove
+        ? 0
+        : (org.storefront.deliveryCharge || 0))
+    : 0;
+  const totalAmount = Number((subtotal + taxTotal + deliveryCharge).toFixed(2));
+
+  const customer = await StorefrontCustomer.findById(req.storefrontCustomer._id).lean();
+  const order = await StorefrontOrder.create({
+    organizationId: org._id,
+    customerId: req.storefrontCustomer._id,
+    customerName: customer.name,
+    customerEmail: customer.email,
+    customerPhone: customer.phone,
+    orderNumber: generateOrderNumber(org.slug),
+    items: orderItems,
+    subtotal: Number(subtotal.toFixed(2)),
+    taxTotal: Number(taxTotal.toFixed(2)),
+    deliveryCharge,
+    totalAmount,
+    fulfillmentType,
+    deliveryAddress: fulfillmentType === "delivery" ? deliveryAddress : undefined,
+    paymentMethod,
+    notes,
+    statusHistory: [{ status: "pending", note: "Order placed" }],
+  });
+
+  for (const item of orderItems) {
+    await Product.findByIdAndUpdate(item.productId, { $inc: { stock: -item.qty } });
+  }
+
+  return ApiResponse.created(res, "Order placed", order);
+});
+
+export const getCustomerOrders = asyncHandler(async (req, res) => {
+  const org = await resolveOrg(req.params.slug);
+  const { page = 1, limit = 10 } = req.query;
+  const skip = (Number(page) - 1) * Number(limit);
+
+  const [orders, total] = await Promise.all([
+    StorefrontOrder.find({ organizationId: org._id, customerId: req.storefrontCustomer._id })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit))
+      .lean(),
+    StorefrontOrder.countDocuments({ organizationId: org._id, customerId: req.storefrontCustomer._id }),
+  ]);
+
+  return ApiResponse.paginated(res, "Orders", {
+    docs: orders, totalDocs: total, limit: Number(limit),
+    page: Number(page), totalPages: Math.ceil(total / Number(limit)),
+  });
+});
+
+export const getCustomerOrder = asyncHandler(async (req, res) => {
+  const org = await resolveOrg(req.params.slug);
+  const order = await StorefrontOrder.findOne({
+    _id: req.params.orderId,
+    organizationId: org._id,
+    customerId: req.storefrontCustomer._id,
+  }).lean();
+  if (!order) throw ApiError.notFound("Order not found");
+  return ApiResponse.ok(res, "Order", order);
+});
+
+// ── Payments ──────────────────────────────────────────────────────────────────
+export const initiateJuspayPayment = asyncHandler(async (req, res) => {
+  const org = await resolveOrg(req.params.slug);
+  const { orderId } = req.body;
+
+  if (!org.storefront.juspay?.enabled) throw ApiError.badRequest("Juspay not configured for this store");
+
+  const order = await StorefrontOrder.findOne({
+    _id: orderId, organizationId: org._id, customerId: req.storefrontCustomer._id,
+  });
+  if (!order) throw ApiError.notFound("Order not found");
+  if (order.paymentStatus === "paid") throw ApiError.badRequest("Order already paid");
+
+  const customer = await StorefrontCustomer.findById(req.storefrontCustomer._id).lean();
+  const juspayOrderId = `sf-${order._id}-${Date.now()}`;
+  const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+
+  const juspayResp = await createJuspayOrder({
+    merchantId: org.storefront.juspay.merchantId,
+    apiKey: org.storefront.juspay.apiKey,
+    environment: org.storefront.juspay.environment || "sandbox",
+    order: {
+      orderId: juspayOrderId,
+      amount: order.totalAmount,
+      customerId: `sf-${customer._id}`,
+      customerEmail: customer.email,
+      customerPhone: customer.phone || "9999999999",
+      returnUrl: `${clientUrl}/store/${req.params.slug}/order/${order._id}?payment=done`,
+      description: `Order ${order.orderNumber}`,
+    },
+  });
+
+  order.juspayOrderId = juspayOrderId;
+  await order.save();
+
+  return ApiResponse.ok(res, "Payment initiated", {
+    paymentLink: juspayResp.payment_links?.web || juspayResp.payment_link,
+    juspayOrderId,
+  });
+});
+
+export const juspayWebhook = asyncHandler(async (req, res) => {
+  const { order_id, status, txn_id } = req.body;
+  if (!order_id) return res.sendStatus(200);
+
+  const order = await StorefrontOrder.findOne({ juspayOrderId: order_id });
+  if (!order) return res.sendStatus(200);
+
+  if (status === "CHARGED" || status === "SUCCESS") {
+    order.paymentStatus = "paid";
+    order.paidAt = new Date();
+    order.juspayPaymentId = txn_id;
+    if (order.status === "pending") {
+      order.status = "confirmed";
+      order.statusHistory.push({ status: "confirmed", note: "Payment received via Juspay" });
+    }
+    await order.save();
+    logger.info(`Juspay payment confirmed for order ${order._id}`);
+  } else if (["FAILED", "AUTHORIZATION_FAILED", "DECLINED"].includes(status)) {
+    order.paymentStatus = "failed";
+    await order.save();
+  }
+
+  return res.sendStatus(200);
+});
+
+export const submitUtr = asyncHandler(async (req, res) => {
+  const org = await resolveOrg(req.params.slug);
+  const { orderId, utrNumber } = req.body;
+
+  if (!utrNumber || utrNumber.trim().length < 8) throw ApiError.badRequest("Invalid UTR number");
+
+  const order = await StorefrontOrder.findOne({
+    _id: orderId,
+    organizationId: org._id,
+    customerId: req.storefrontCustomer._id,
+    paymentMethod: "upi",
+  });
+  if (!order) throw ApiError.notFound("Order not found");
+  if (order.paymentStatus === "paid") throw ApiError.badRequest("Order already paid");
+
+  order.utrNumber = utrNumber.trim();
+  order.statusHistory.push({ status: order.status, note: `Customer submitted UTR: ${utrNumber.trim()}` });
+  await order.save();
+
+  return ApiResponse.ok(res, "UTR submitted. Payment will be verified by the store.");
+});

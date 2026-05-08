@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard, Package, ShoppingCart, TrendingUp, BarChart3, FileText,
   Settings, Users, Truck, UserCircle, Layers, ClipboardList, ChevronLeft,
-  ChevronRight, Store, Scan, Building2, ShieldCheck,
+  ChevronRight, Store, Scan, Building2, ShieldCheck, Globe,
 } from "lucide-react";
 import { useAuthStore } from "../../stores/authStore.js";
 
@@ -62,6 +62,13 @@ const STORE_NAV = [
     section: "Analytics",
     items: [
       { to: "/reports", icon: BarChart3, label: "Reports" },
+    ],
+  },
+  {
+    section: "Online Store",
+    adminOnly: true,
+    items: [
+      { to: "/storefront-orders", icon: Globe, label: "Storefront Orders", adminOnly: true },
     ],
   },
   {

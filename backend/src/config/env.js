@@ -14,6 +14,8 @@ const envSchema = z.object({
   AUTH_RATE_LIMIT_MAX: z.coerce.number().default(20),
   APP_NAME: z.string().default("InventorySaaS"),
   CLIENT_URL: z.string().default("http://localhost:5173"),
+  CUSTOMER_JWT_SECRET: z.string().optional(),
+  CUSTOMER_REFRESH_SECRET: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -185,5 +185,24 @@ router.delete("/:id/force", authorize("superAdmin"), asyncHandler(async (req, re
 // Store admin/staff routes
 router.get("/me",   getMine);
 router.patch("/me", authorize("admin", "superAdmin"), updateMine);
+router.patch("/me/storefront", authorize("admin", "superAdmin"), asyncHandler(async (req, res) => {
+  const allowed = ["enabled", "paymentMethods", "deliveryEnabled", "pickupEnabled", "deliveryCharge", "freeDeliveryAbove", "upiId", "upiName", "juspay"];
+  const update = {};
+  for (const [k, v] of Object.entries(req.body)) {
+    if (!allowed.includes(k)) continue;
+    if (k === "juspay" && typeof v === "object") {
+      for (const [jk, jv] of Object.entries(v)) update[`storefront.juspay.${jk}`] = jv;
+    } else {
+      update[`storefront.${k}`] = v;
+    }
+  }
+  const org = await Organization.findByIdAndUpdate(
+    req.organizationId,
+    { $set: { ...update, updatedBy: req.user._id } },
+    { new: true, runValidators: true }
+  );
+  if (!org) throw ApiError.notFound("Organization not found");
+  return ApiResponse.ok(res, "Storefront settings updated", org.storefront);
+}));
 
 export default router;

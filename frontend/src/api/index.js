@@ -14,6 +14,14 @@ export const orgApi = {
   get: () => api.get("/organizations/me").then(r),
   update: d => api.patch("/organizations/me", d).then(r),
   storeTypes: () => api.get("/organizations/store-types").then(r),
+  updateStorefront: d => api.patch("/organizations/me/storefront", d).then(r),
+};
+export const sfOrderApi = {
+  list: p => api.get("/storefront-orders", { params: p }).then(r),
+  stats: () => api.get("/storefront-orders/stats").then(r),
+  get: id => api.get(`/storefront-orders/${id}`).then(r),
+  updateStatus: (id, d) => api.patch(`/storefront-orders/${id}/status`, d).then(r),
+  confirmPayment: (id, d) => api.patch(`/storefront-orders/${id}/payment`, d).then(r),
 };
 export const platformApi = {
   stats: () => api.get("/organizations/platform-stats").then(r),

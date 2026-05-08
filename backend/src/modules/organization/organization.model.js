@@ -27,6 +27,22 @@ const organizationSchema = new mongoose.Schema({
     taxEnabled: { type: Boolean, default: false },
     defaultTaxRate: { type: Number, default: 0 },
   },
+  storefront: {
+    enabled: { type: Boolean, default: false },
+    paymentMethods: { type: [String], default: ["cash"] },
+    deliveryEnabled: { type: Boolean, default: true },
+    pickupEnabled: { type: Boolean, default: true },
+    deliveryCharge: { type: Number, default: 0 },
+    freeDeliveryAbove: { type: Number, default: 0 },
+    upiId: { type: String, trim: true },
+    upiName: { type: String, trim: true },
+    juspay: {
+      enabled: { type: Boolean, default: false },
+      merchantId: { type: String, trim: true },
+      apiKey: { type: String, trim: true },
+      environment: { type: String, enum: ["sandbox", "production"], default: "sandbox" },
+    },
+  },
 }, { timestamps: true });
 
 organizationSchema.pre("save", async function(next) {

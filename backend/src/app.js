@@ -24,6 +24,8 @@ import invoiceRoutes      from "./modules/invoice/invoice.routes.js";
 import dashboardRoutes    from "./modules/dashboard/dashboard.routes.js";
 import reportRoutes       from "./modules/report/report.routes.js";
 import userRoutes         from "./modules/user/user.routes.js";
+import storefrontRoutes   from "./modules/storefront/storefront.routes.js";
+import sfOrderRoutes      from "./modules/storefrontOrder/storefrontOrder.routes.js";
 
 const app = express();
 
@@ -78,6 +80,8 @@ app.use("/api/v1/invoices",      invoiceRoutes);
 app.use("/api/v1/dashboard",     dashboardRoutes);
 app.use("/api/v1/reports",       reportRoutes);
 app.use("/api/v1/users",         userRoutes);
+app.use("/api/v1/store/:slug",   storefrontRoutes);
+app.use("/api/v1/storefront-orders", sfOrderRoutes);
 
 // ── Error handling ────────────────────────────────────────────────────────────
 app.use(notFound);

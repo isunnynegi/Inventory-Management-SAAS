@@ -13,7 +13,7 @@ export default function UsersPage() {
   const [page, setPage] = useState(1);
   const [modal, setModal] = useState(false);
   const [confirm, setConfirm] = useState(null);
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({ defaultValues: { role: "staff" } });
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({ mode: "onChange", defaultValues: { role: "staff" } });
 
   const { data, isLoading } = useQuery({ queryKey: ["users", page], queryFn: () => userApi.list({ page, limit: 20 }) });
 

@@ -20,6 +20,7 @@ export default function SalesPage() {
   const [search, setSearch] = useState("");
 
   const { register, handleSubmit, reset, watch, control, formState: { errors } } = useForm({
+    mode: "onChange",
     defaultValues: { items: [{ productId: "", qty: 1, sellingPrice: 0, taxPercent: 0 }], discount: 0, amountPaid: 0, paymentMethod: "cash" }
   });
   const { fields, append, remove } = useFieldArray({ control, name: "items" });

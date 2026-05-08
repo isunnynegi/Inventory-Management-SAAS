@@ -18,7 +18,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { setAuth } = useAuthStore();
   const nav = useNavigate();
-  const { register, handleSubmit, formState: { errors } } = useForm({ resolver: zodResolver(schema) });
+  const { register, handleSubmit, formState: { errors } } = useForm({ mode: "onChange", resolver: zodResolver(schema) });
 
   const onSubmit = async (data) => {
     setLoading(true);

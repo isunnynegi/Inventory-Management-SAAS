@@ -50,6 +50,7 @@ export default function RegisterPage() {
   const storeTypes = storeTypesRes?.data ?? Object.keys(STORE_TYPE_LABELS);
 
   const { register, handleSubmit, formState: { errors } } = useForm({
+    mode: "onChange",
     resolver: zodResolver(schema),
     defaultValues: { storeType: "general" },
   });

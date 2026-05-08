@@ -17,7 +17,7 @@ export default function SettingsPage() {
   const { organization, updateOrg } = useAuthStore();
   const qc = useQueryClient();
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm({ mode: "onChange",
     defaultValues: {
       name: organization?.name ?? "",
       currency: organization?.currency ?? "INR",

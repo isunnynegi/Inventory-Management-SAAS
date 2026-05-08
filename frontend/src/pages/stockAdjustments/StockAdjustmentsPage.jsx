@@ -11,7 +11,7 @@ export default function StockAdjustmentsPage() {
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [modal, setModal] = useState(false);
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({ defaultValues: { type: "increase" } });
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({ mode: "onChange", defaultValues: { type: "increase" } });
 
   const { data: prodData } = useQuery({ queryKey: ["products-all"], queryFn: () => productApi.list({ limit: 200 }) });
   const products = prodData?.data || [];

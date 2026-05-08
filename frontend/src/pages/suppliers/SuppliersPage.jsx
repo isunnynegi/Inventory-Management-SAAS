@@ -14,7 +14,7 @@ export default function SuppliersPage() {
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState(null);
   const [confirm, setConfirm] = useState(null);
-  const { register, handleSubmit, reset, formState: { errors } } = useForm();
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({ mode: "onChange" });
 
   const { data, isLoading } = useQuery({
     queryKey: ["suppliers", page, search],

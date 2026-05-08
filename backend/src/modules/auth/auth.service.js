@@ -24,10 +24,12 @@ export const register = async ({ name, email, password, storeName, organizationN
 
   await Organization.findByIdAndUpdate(org._id, { createdBy: user._id });
 
-  // Seed default categories based on store type (non-blocking — failure must not break registration)
-  seedCategoriesForStore(storeType || "general", org._id, user._id).catch(err =>
-    logger.warn(`Category seed failed for org ${org._id}: ${err.message}`)
-  );
+  // Seed default categories — awaited so they're ready before the user reaches the dashboard
+  try {
+    await seedCategoriesForStore(storeType || "general", org._id, user._id);
+  } catch (err) {
+    logger.warn(`Category seed failed for org ${org._id}: ${err.message}`);
+  }
 
   const accessToken = signToken(user._id, org._id, user.role);
   const refreshToken = signRefreshToken(user._id);

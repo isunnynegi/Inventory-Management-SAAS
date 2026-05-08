@@ -138,7 +138,7 @@ export default function ProductsPage() {
               className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-primary-500 bg-white text-gray-700"
             >
               <option value="all">All categories</option>
-              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {categories.map(c => <option key={c._id || c.id} value={c._id || c.id}>{c.name}</option>)}
             </select>
             {catFilter !== "all" && subcategories.length > 0 && (
               <select

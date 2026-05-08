@@ -74,7 +74,7 @@ export default function AddProductDrawer({ open, onClose, editProduct = null }) 
     enabled: open,
   });
   const categories = catData?.data || [];
-  const categoryOptions = categories.map(c => ({ v: c.id, l: c.name }));
+  const categoryOptions = categories.map(c => ({ v: c._id || c.id, l: c.name }));
 
   // Load subcategories when a category is selected
   const { data: subData } = useQuery({
@@ -101,7 +101,7 @@ export default function AddProductDrawer({ open, onClose, editProduct = null }) 
         cost: String(editProduct.purchasePrice ?? ""),
         price: String(editProduct.sellingPrice ?? ""),
         taxRate: String(editProduct.taxPercent ?? "18"),
-        category: editProduct.categoryId?.id || editProduct.categoryId || "",
+        category: editProduct.categoryId?._id || editProduct.categoryId?.id || editProduct.categoryId || "",
         ...attrMap,
       });
     } else {

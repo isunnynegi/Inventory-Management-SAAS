@@ -99,7 +99,8 @@ const ELECTRICAL_STORE_TYPES = new Set(["electrical", "sanitary", "hardware"]);
 export const seedCategoriesForStore = async (storeType, organizationId, createdBy) => {
   if (!ELECTRICAL_STORE_TYPES.has(storeType)) return;
 
-  const existing = await Category.countDocuments({ organizationId });
+  // Check including soft-deleted so we don't re-seed if data already exists
+  const existing = await Category.countDocuments({ organizationId, isDeleted: { $in: [true, false] } });
   if (existing > 0) return;
 
   // Insert parent categories
@@ -110,6 +111,7 @@ export const seedCategoriesForStore = async (storeType, organizationId, createdB
       parent: null,
       organizationId,
       createdBy,
+      isDeleted: false,
     })),
     { ordered: false }
   );
@@ -123,7 +125,7 @@ export const seedCategoriesForStore = async (storeType, organizationId, createdB
     const parentId = parentMap[cat.name];
     if (!parentId) continue;
     for (const subName of cat.subs) {
-      subDocs.push({ name: subName, parent: parentId, organizationId, createdBy });
+      subDocs.push({ name: subName, parent: parentId, organizationId, createdBy, isDeleted: false });
     }
   }
 

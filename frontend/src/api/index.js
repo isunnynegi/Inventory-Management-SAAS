@@ -100,3 +100,9 @@ export const userApi = {
   toggle: id => api.patch(`/users/${id}/toggle`).then(r),
   remove: id => api.delete(`/users/${id}`).then(r),
 };
+export const couponApi = {
+  list: () => api.get("/coupons").then(r),
+  create: d => api.post("/coupons", d).then(r),
+  update: (id, d) => api.patch(`/coupons/${id}`, d).then(r),
+  delete: id => api.delete(`/coupons/${id}`).then(r),
+};

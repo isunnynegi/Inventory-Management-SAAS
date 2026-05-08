@@ -42,6 +42,13 @@ const organizationSchema = new mongoose.Schema({
       apiKey: { type: String, trim: true },
       environment: { type: String, enum: ["sandbox", "production"], default: "sandbox" },
     },
+    branding: {
+      primaryColor: { type: String, trim: true, match: /^#[0-9a-fA-F]{6}$/ },
+      tagline: { type: String, trim: true, maxlength: 150 },
+      bannerTitle: { type: String, trim: true, maxlength: 100 },
+      bannerSubtitle: { type: String, trim: true, maxlength: 200 },
+      bannerImage: { type: String, trim: true },
+    },
   },
 }, { timestamps: true });
 

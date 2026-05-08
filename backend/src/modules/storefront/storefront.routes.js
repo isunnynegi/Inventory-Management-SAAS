@@ -23,6 +23,8 @@ const sfOrderLimiter = rateLimit({
 
 // Public routes
 router.get("/", ctrl.getStoreInfo);
+router.get("/homepage", ctrl.getHomepage);
+router.get("/coupons/validate", ctrl.validateCoupon);
 router.get("/products", ctrl.listProducts);
 router.get("/products/:productId", ctrl.getProduct);
 router.get("/categories", ctrl.listCategories);

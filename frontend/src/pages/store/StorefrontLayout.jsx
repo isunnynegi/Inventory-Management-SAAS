@@ -24,6 +24,15 @@ export default function StorefrontLayout() {
 
   const store = storeData?.data;
 
+  // Inject per-store brand color as CSS variable
+  useEffect(() => {
+    const color = store?.branding?.primaryColor;
+    if (color) {
+      document.documentElement.style.setProperty("--sf-primary", color);
+    }
+    return () => { document.documentElement.style.removeProperty("--sf-primary"); };
+  }, [store?.branding?.primaryColor]);
+
   // Restore customer session from cookie
   useEffect(() => {
     if (!window.__sfAccessToken) {

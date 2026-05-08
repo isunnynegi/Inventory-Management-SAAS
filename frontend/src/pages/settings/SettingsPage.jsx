@@ -46,6 +46,13 @@ function StorefrontSettings({ organization, updateOrg }) {
     freeDeliveryAbove: sf.freeDeliveryAbove ?? 0,
     upiId: sf.upiId ?? "",
     upiName: sf.upiName ?? "",
+    branding: {
+      primaryColor: sf.branding?.primaryColor ?? "",
+      tagline: sf.branding?.tagline ?? "",
+      bannerTitle: sf.branding?.bannerTitle ?? "",
+      bannerSubtitle: sf.branding?.bannerSubtitle ?? "",
+      bannerImage: sf.branding?.bannerImage ?? "",
+    },
   });
 
   const mutation = useMutation({
@@ -179,6 +186,58 @@ function StorefrontSettings({ organization, updateOrg }) {
             </p>
           </div>
         )}
+      </Card>
+
+      {/* Branding */}
+      <Card className="p-6">
+        <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-1">Store Branding</h3>
+        <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">Customize your storefront appearance</p>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Brand Color</label>
+            <div className="flex items-center gap-3">
+              <input type="color" value={form.branding.primaryColor || "#4F46E5"}
+                onChange={e => setForm(f => ({ ...f, branding: { ...f.branding, primaryColor: e.target.value } }))}
+                className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer p-0.5" />
+              <input type="text" value={form.branding.primaryColor}
+                onChange={e => setForm(f => ({ ...f, branding: { ...f.branding, primaryColor: e.target.value } }))}
+                placeholder="#4F46E5"
+                className="w-32 px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 bg-white dark:bg-gray-800 dark:text-gray-100 font-mono transition" />
+              <p className="text-xs text-gray-400 dark:text-gray-500">Used as primary color on your store</p>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tagline</label>
+            <input type="text" value={form.branding.tagline} maxLength={150}
+              onChange={e => setForm(f => ({ ...f, branding: { ...f.branding, tagline: e.target.value } }))}
+              placeholder="Fresh groceries delivered to your door"
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 bg-white dark:bg-gray-800 dark:text-gray-100 transition" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Banner Title</label>
+              <input type="text" value={form.branding.bannerTitle} maxLength={100}
+                onChange={e => setForm(f => ({ ...f, branding: { ...f.branding, bannerTitle: e.target.value } }))}
+                placeholder="Welcome to Our Store"
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 bg-white dark:bg-gray-800 dark:text-gray-100 transition" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Banner Subtitle</label>
+              <input type="text" value={form.branding.bannerSubtitle} maxLength={200}
+                onChange={e => setForm(f => ({ ...f, branding: { ...f.branding, bannerSubtitle: e.target.value } }))}
+                placeholder="Shop the best products at great prices"
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 bg-white dark:bg-gray-800 dark:text-gray-100 transition" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Banner Image URL</label>
+            <input type="url" value={form.branding.bannerImage}
+              onChange={e => setForm(f => ({ ...f, branding: { ...f.branding, bannerImage: e.target.value } }))}
+              placeholder="https://example.com/banner.jpg"
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 bg-white dark:bg-gray-800 dark:text-gray-100 transition" />
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Leave empty to use a color gradient banner</p>
+          </div>
+        </div>
       </Card>
 
       <div className="flex justify-end">

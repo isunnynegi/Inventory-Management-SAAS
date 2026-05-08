@@ -41,6 +41,8 @@ const storefrontOrderSchema = new mongoose.Schema({
     default: "pending",
   },
   cancelReason: { type: String, trim: true },
+  couponCode: { type: String, trim: true, uppercase: true },
+  couponDiscount: { type: Number, default: 0, min: 0 },
   notes: { type: String, trim: true },
   statusHistory: [{
     status: { type: String },

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Search, ShoppingCart, Package, Tag } from "lucide-react";
 import { useCartStore } from "../../stores/storefrontStore.js";
@@ -46,8 +46,9 @@ function ProductCard({ product, onAdd, currencySymbol }) {
 
 export default function StorePage() {
   const { store, slug, api } = useOutletContext();
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
-  const [categoryId, setCategoryId] = useState("");
+  const [categoryId, setCategoryId] = useState(searchParams.get("categoryId") || "");
   const [page, setPage] = useState(1);
   const addItem = useCartStore(s => s.addItem);
 

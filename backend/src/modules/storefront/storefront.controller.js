@@ -4,6 +4,7 @@ import Product from "../product/product.model.js";
 import Category from "../category/category.model.js";
 import StorefrontCustomer from "./storefrontCustomer.model.js";
 import StorefrontOrder from "../storefrontOrder/storefrontOrder.model.js";
+import Coupon from "../coupon/coupon.model.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
@@ -48,6 +49,73 @@ export const getStoreInfo = asyncHandler(async (req, res) => {
     upiId: org.storefront.upiId,
     upiName: org.storefront.upiName,
     juspayEnabled: !!(org.storefront.juspay?.enabled && org.storefront.juspay?.merchantId),
+    branding: org.storefront.branding || {},
+  });
+});
+
+// ── Homepage data ─────────────────────────────────────────────────────────────
+export const getHomepage = asyncHandler(async (req, res) => {
+  const org = await resolveOrg(req.params.slug);
+
+  const [categories, featured, popular] = await Promise.all([
+    Category.find({ organizationId: org._id, parent: null })
+      .select("name image description")
+      .sort("name")
+      .limit(12)
+      .lean(),
+    Product.find({ organizationId: org._id, isActive: true, isFeatured: true, stock: { $gt: 0 } })
+      .select("name image sellingPrice taxPercent stock categoryId isFeatured soldCount")
+      .populate("categoryId", "name")
+      .limit(12)
+      .lean(),
+    Product.find({ organizationId: org._id, isActive: true, stock: { $gt: 0 } })
+      .select("name image sellingPrice taxPercent stock categoryId soldCount")
+      .populate("categoryId", "name")
+      .sort({ soldCount: -1 })
+      .limit(12)
+      .lean(),
+  ]);
+
+  return ApiResponse.ok(res, "Homepage data", {
+    branding: org.storefront.branding || {},
+    categories,
+    featuredProducts: featured,
+    popularProducts: popular,
+  });
+});
+
+// ── Coupon validation ─────────────────────────────────────────────────────────
+export const validateCoupon = asyncHandler(async (req, res) => {
+  const org = await resolveOrg(req.params.slug);
+  const { code, subtotal } = req.query;
+
+  if (!code) throw ApiError.badRequest("Coupon code is required");
+  const orderAmount = Number(subtotal) || 0;
+
+  const coupon = await Coupon.findOne({
+    organizationId: org._id,
+    code: code.toUpperCase().trim(),
+    isActive: true,
+    $and: [
+      { $or: [{ expiresAt: null }, { expiresAt: { $gt: new Date() } }] },
+      { $or: [{ maxUses: 0 }, { $expr: { $lt: ["$usedCount", "$maxUses"] } }] },
+    ],
+  }).lean();
+
+  if (!coupon) throw ApiError.badRequest("Invalid or expired coupon code");
+  if (coupon.minOrderAmount > 0 && orderAmount < coupon.minOrderAmount) {
+    throw ApiError.badRequest(`Minimum order amount of ₹${coupon.minOrderAmount} required for this coupon`);
+  }
+
+  const discount = coupon.type === "percent"
+    ? Number(((orderAmount * coupon.value) / 100).toFixed(2))
+    : Math.min(coupon.value, orderAmount);
+
+  return ApiResponse.ok(res, "Coupon valid", {
+    code: coupon.code,
+    type: coupon.type,
+    value: coupon.value,
+    discount,
   });
 });
 
@@ -91,7 +159,7 @@ export const getProduct = asyncHandler(async (req, res) => {
 export const listCategories = asyncHandler(async (req, res) => {
   const org = await resolveOrg(req.params.slug);
   const categories = await Category.find({ organizationId: org._id, parent: null })
-    .select("name description")
+    .select("name description image")
     .sort("name")
     .lean();
   return ApiResponse.ok(res, "Categories", categories);
@@ -236,7 +304,7 @@ function generateOrderNumber(orgSlug) {
 
 export const createOrder = asyncHandler(async (req, res) => {
   const org = await resolveOrg(req.params.slug);
-  const { items, fulfillmentType, deliveryAddress, paymentMethod, notes } = req.body;
+  const { items, fulfillmentType, deliveryAddress, paymentMethod, notes, couponCode } = req.body;
 
   if (!org.storefront.paymentMethods.includes(paymentMethod)) {
     throw ApiError.badRequest("Payment method not supported by this store");
@@ -283,7 +351,38 @@ export const createOrder = asyncHandler(async (req, res) => {
         ? 0
         : (org.storefront.deliveryCharge || 0))
     : 0;
-  const totalAmount = Number((subtotal + taxTotal + deliveryCharge).toFixed(2));
+
+  // Atomic coupon redemption
+  let couponDiscount = 0;
+  let appliedCouponCode;
+  if (couponCode) {
+    const coupon = await Coupon.findOneAndUpdate(
+      {
+        organizationId: org._id,
+        code: couponCode.toUpperCase().trim(),
+        isActive: true,
+        $and: [
+          { $or: [{ expiresAt: null }, { expiresAt: { $gt: new Date() } }] },
+          { $or: [{ maxUses: 0 }, { $expr: { $lt: ["$usedCount", "$maxUses"] } }] },
+        ],
+      },
+      { $inc: { usedCount: 1 } },
+      { new: false }
+    ).lean();
+
+    if (!coupon) throw ApiError.badRequest("Invalid, expired, or fully used coupon code");
+    if (coupon.minOrderAmount > 0 && subtotal < coupon.minOrderAmount) {
+      await Coupon.findByIdAndUpdate(coupon._id, { $inc: { usedCount: -1 } });
+      throw ApiError.badRequest(`Minimum order amount of ₹${coupon.minOrderAmount} required for this coupon`);
+    }
+
+    couponDiscount = coupon.type === "percent"
+      ? Number(((subtotal * coupon.value) / 100).toFixed(2))
+      : Math.min(coupon.value, subtotal);
+    appliedCouponCode = coupon.code;
+  }
+
+  const totalAmount = Number((subtotal + taxTotal + deliveryCharge - couponDiscount).toFixed(2));
 
   const customer = await StorefrontCustomer.findById(req.storefrontCustomer._id).lean();
   const order = await StorefrontOrder.create({
@@ -297,6 +396,8 @@ export const createOrder = asyncHandler(async (req, res) => {
     subtotal: Number(subtotal.toFixed(2)),
     taxTotal: Number(taxTotal.toFixed(2)),
     deliveryCharge,
+    couponCode: appliedCouponCode,
+    couponDiscount,
     totalAmount,
     fulfillmentType,
     deliveryAddress: fulfillmentType === "delivery" ? deliveryAddress : undefined,
@@ -306,7 +407,7 @@ export const createOrder = asyncHandler(async (req, res) => {
   });
 
   for (const item of orderItems) {
-    await Product.findByIdAndUpdate(item.productId, { $inc: { stock: -item.qty } });
+    await Product.findByIdAndUpdate(item.productId, { $inc: { stock: -item.qty, soldCount: item.qty } });
   }
 
   return ApiResponse.created(res, "Order placed", order);

@@ -186,12 +186,14 @@ router.delete("/:id/force", authorize("superAdmin"), asyncHandler(async (req, re
 router.get("/me",   getMine);
 router.patch("/me", authorize("admin", "superAdmin"), updateMine);
 router.patch("/me/storefront", authorize("admin", "superAdmin"), asyncHandler(async (req, res) => {
-  const allowed = ["enabled", "paymentMethods", "deliveryEnabled", "pickupEnabled", "deliveryCharge", "freeDeliveryAbove", "upiId", "upiName", "juspay"];
+  const allowed = ["enabled", "paymentMethods", "deliveryEnabled", "pickupEnabled", "deliveryCharge", "freeDeliveryAbove", "upiId", "upiName", "juspay", "branding"];
   const update = {};
   for (const [k, v] of Object.entries(req.body)) {
     if (!allowed.includes(k)) continue;
     if (k === "juspay" && typeof v === "object") {
       for (const [jk, jv] of Object.entries(v)) update[`storefront.juspay.${jk}`] = jv;
+    } else if (k === "branding" && typeof v === "object") {
+      for (const [bk, bv] of Object.entries(v)) update[`storefront.branding.${bk}`] = bv;
     } else {
       update[`storefront.${k}`] = v;
     }

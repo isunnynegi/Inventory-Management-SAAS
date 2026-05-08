@@ -16,6 +16,8 @@ const productSchema = new mongoose.Schema({
   taxPercent: { type: Number, default: 0, min: 0, max: 100 },
   image: { type: String },
   isActive: { type: Boolean, default: true },
+  isFeatured: { type: Boolean, default: false },
+  soldCount: { type: Number, default: 0, min: 0 },
   // Dynamic attributes: e.g. [{ key: "Color", value: "Red" }]
   attributes: [{ key: { type: String, trim: true }, value: { type: String, trim: true } }],
 }, { timestamps: true });
@@ -24,6 +26,8 @@ productSchema.index({ organizationId: 1, isActive: 1 });
 productSchema.index({ organizationId: 1, stock: 1 });
 productSchema.index({ sku: 1, organizationId: 1 }, { sparse: true });
 productSchema.index({ barcode: 1, organizationId: 1 }, { sparse: true });
+productSchema.index({ organizationId: 1, isFeatured: 1, isActive: 1 });
+productSchema.index({ organizationId: 1, isActive: 1, soldCount: -1 });
 
 productSchema.virtual("isLowStock").get(function() {
   return this.stock <= this.reorderLevel;

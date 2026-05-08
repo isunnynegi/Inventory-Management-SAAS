@@ -32,6 +32,8 @@ import OrderConfirmPage from "./pages/store/OrderConfirmPage.jsx";
 import CustomerLoginPage from "./pages/store/CustomerLoginPage.jsx";
 import CustomerRegisterPage from "./pages/store/CustomerRegisterPage.jsx";
 import CustomerAccountPage from "./pages/store/CustomerAccountPage.jsx";
+import StorefrontHomePage from "./pages/store/StorefrontHomePage.jsx";
+import CouponsPage from "./pages/coupons/CouponsPage.jsx";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -84,6 +86,7 @@ export default function App() {
             <Route element={<Layout />}>
               <Route path="/users" element={<UsersPage />} />
               <Route path="/storefront-orders" element={<StorefrontOrdersPage />} />
+              <Route path="/coupons" element={<CouponsPage />} />
             </Route>
           </Route>
           <Route element={<ProtectedRoute superAdminOnly />}>
@@ -93,7 +96,8 @@ export default function App() {
           </Route>
           {/* Public storefront — no auth required */}
           <Route path="/store/:slug" element={<StorefrontLayout />}>
-            <Route index element={<StorePage />} />
+            <Route index element={<StorefrontHomePage />} />
+            <Route path="products" element={<StorePage />} />
             <Route path="cart" element={<CartPage />} />
             <Route path="checkout" element={<CheckoutPage />} />
             <Route path="order/:orderId" element={<OrderConfirmPage />} />

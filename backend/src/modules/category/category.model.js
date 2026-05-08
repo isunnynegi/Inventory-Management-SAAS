@@ -6,6 +6,7 @@ const categorySchema = new mongoose.Schema({
   description: { type: String, trim: true, maxlength: 500 },
   organizationId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   parent: { type: mongoose.Schema.Types.ObjectId, ref: "Category", default: null, index: true },
+  image: { type: String, trim: true },
 }, { timestamps: true });
 
 categorySchema.index({ name: 1, organizationId: 1, parent: 1 }, { unique: true });

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
-import { MapPin, Store, CreditCard, Smartphone, Banknote, ArrowLeft, Check } from "lucide-react";
+import { MapPin, Store, CreditCard, Smartphone, Banknote, ArrowLeft, Check, Tag, X, Loader2 } from "lucide-react";
 import { useCartStore, useCustomerStore } from "../../stores/storefrontStore.js";
 import toast from "react-hot-toast";
 
@@ -54,6 +54,9 @@ export default function CheckoutPage() {
   );
   const [savedAddrIdx, setSavedAddrIdx] = useState(null);
   const [notes, setNotes] = useState("");
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponLoading, setCouponLoading] = useState(false);
 
   if (!items || items.length === 0) {
     nav(`/store/${slug}/cart`);
@@ -65,7 +68,22 @@ export default function CheckoutPage() {
   const deliveryCharge = fulfillmentType === "delivery"
     ? (store?.freeDeliveryAbove > 0 && subtotal >= store.freeDeliveryAbove ? 0 : (store?.deliveryCharge || 0))
     : 0;
-  const total = subtotal + taxTotal + deliveryCharge;
+  const couponDiscount = appliedCoupon?.discount || 0;
+  const total = subtotal + taxTotal + deliveryCharge - couponDiscount;
+
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return;
+    setCouponLoading(true);
+    try {
+      const res = await api.validateCoupon(couponInput.trim(), subtotal);
+      setAppliedCoupon(res.data);
+      toast.success(`Coupon applied! You save ${currencySymbol}${res.data.discount.toFixed(2)}`);
+    } catch (e) {
+      toast.error(e.response?.data?.message || "Invalid coupon code");
+    } finally {
+      setCouponLoading(false);
+    }
+  };
 
   const placeOrder = useMutation({
     mutationFn: () => api.createOrder({
@@ -74,6 +92,7 @@ export default function CheckoutPage() {
       deliveryAddress: fulfillmentType === "delivery" ? address : undefined,
       paymentMethod,
       notes: notes || undefined,
+      couponCode: appliedCoupon?.code || undefined,
     }),
     onSuccess: async ({ data: order }) => {
       clearCart();
@@ -208,6 +227,38 @@ export default function CheckoutPage() {
         />
       </div>
 
+      {/* Coupon */}
+      <div className="bg-white rounded-xl border border-gray-100 p-4">
+        <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2"><Tag size={16} /> Apply Coupon</h3>
+        {appliedCoupon ? (
+          <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+            <div>
+              <p className="text-sm font-semibold text-emerald-800">{appliedCoupon.code}</p>
+              <p className="text-xs text-emerald-600">You save {currencySymbol}{appliedCoupon.discount.toFixed(2)}</p>
+            </div>
+            <button onClick={() => { setAppliedCoupon(null); setCouponInput(""); }}
+              className="p-1.5 text-emerald-700 hover:bg-emerald-100 rounded-lg transition-colors">
+              <X size={16} />
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={couponInput}
+              onChange={e => setCouponInput(e.target.value.toUpperCase())}
+              onKeyDown={e => e.key === "Enter" && handleApplyCoupon()}
+              placeholder="Enter coupon code"
+              className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition uppercase"
+            />
+            <button onClick={handleApplyCoupon} disabled={couponLoading || !couponInput.trim()}
+              className="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors flex items-center gap-1.5">
+              {couponLoading ? <Loader2 size={14} className="animate-spin" /> : "Apply"}
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Order total */}
       <div className="bg-white rounded-xl border border-gray-100 p-4 space-y-2">
         <h3 className="font-semibold text-gray-900 mb-2">Order Summary</h3>
@@ -225,6 +276,12 @@ export default function CheckoutPage() {
           <div className="flex justify-between text-sm text-gray-600">
             <span>Delivery charge</span>
             <span>{deliveryCharge === 0 ? "Free" : `${currencySymbol}${deliveryCharge}`}</span>
+          </div>
+        )}
+        {couponDiscount > 0 && (
+          <div className="flex justify-between text-sm text-emerald-600 font-medium">
+            <span>Coupon discount</span>
+            <span>−{currencySymbol}{couponDiscount.toFixed(2)}</span>
           </div>
         )}
         <div className="border-t border-gray-100 pt-2 flex justify-between font-bold text-gray-900 text-base">

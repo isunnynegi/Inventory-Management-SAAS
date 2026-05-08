@@ -16,7 +16,9 @@ export const authenticate = asyncHandler(async (req, _res, next) => {
   if (!user.isActive) throw ApiError.forbidden("Account is deactivated");
 
   req.user = user;
-  req.organizationId = user.organizationId;
+  // Use token-embedded organizationId so impersonation tokens work
+  req.organizationId = decoded.organizationId || user.organizationId;
+  if (decoded.impersonatedBy) req.impersonating = true;
   next();
 });
 

@@ -1,12 +1,12 @@
-import { Bell, LogOut, User, ChevronDown, ShieldCheck } from "lucide-react";
+import { Bell, LogOut, User, ChevronDown, ShieldCheck, UserX } from "lucide-react";
 import { useState } from "react";
 import { useAuthStore } from "../../stores/authStore.js";
 import { useNavigate } from "react-router-dom";
-import { authApi } from "../../api/index.js";
+import { authApi, orgApi } from "../../api/index.js";
 import toast from "react-hot-toast";
 
 export default function Header({ sidebarWidth }) {
-  const { user, clearAuth, isSuperAdmin } = useAuthStore();
+  const { user, clearAuth, isSuperAdmin, impersonating, impersonatedOrgName, stopImpersonation, updateOrg } = useAuthStore();
   const superAdmin = isSuperAdmin();
   const [open, setOpen] = useState(false);
   const nav = useNavigate();
@@ -18,8 +18,28 @@ export default function Header({ sidebarWidth }) {
     toast.success("Logged out");
   };
 
+  const exitImpersonation = async () => {
+    stopImpersonation();
+    // Reload org data for superAdmin context
+    try {
+      const res = await orgApi.get();
+      updateOrg(res.data);
+    } catch {}
+    nav("/organizations");
+    toast.success("Returned to super admin");
+  };
+
   return (
-    <header className="fixed top-0 right-0 h-[60px] bg-white border-b border-gray-100 flex items-center justify-between px-6 z-20 transition-all duration-200" style={{ left: sidebarWidth }}>
+    <header className="fixed top-0 right-0 bg-white border-b border-gray-100 flex flex-col z-20 transition-all duration-200" style={{ left: sidebarWidth }}>
+      {impersonating && (
+        <div className="bg-amber-500 text-white text-xs font-medium px-4 py-1.5 flex items-center justify-between gap-3">
+          <span>Impersonating <strong>{impersonatedOrgName}</strong> — changes affect this store</span>
+          <button onClick={exitImpersonation} className="flex items-center gap-1 bg-white/20 hover:bg-white/30 rounded px-2 py-0.5 transition">
+            <UserX size={12} /> Exit
+          </button>
+        </div>
+      )}
+      <div className="h-[60px] flex items-center justify-between px-6">
       <div />
       <div className="flex items-center gap-3">
         <button className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg">
@@ -56,6 +76,7 @@ export default function Header({ sidebarWidth }) {
             </div>
           )}
         </div>
+      </div>
       </div>
     </header>
   );

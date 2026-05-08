@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { platformApi, orgApi } from "../../api/index.js";
-import { Card, Badge, Spinner } from "../../components/ui/index.jsx";
-import { Search, Building2, ToggleLeft, ToggleRight } from "lucide-react";
+import { Card, Badge, Spinner, Modal, Button } from "../../components/ui/index.jsx";
+import { Search, Building2, ToggleLeft, ToggleRight, Trash2, Trash, UserCheck, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
+import { useAuthStore } from "../../stores/authStore.js";
 
 const STORE_TYPE_LABELS = {
   general: "General", electronics: "Electronics", electrical: "Electrical",
@@ -12,18 +14,69 @@ const STORE_TYPE_LABELS = {
   grocery: "Grocery", clothing: "Clothing", other: "Other",
 };
 
+function DeleteConfirmModal({ org, onClose, onSoftDelete, onForceDelete, softPending, forcePending }) {
+  if (!org) return null;
+  const isAlreadyDeleted = org.isDeleted;
+  return (
+    <Modal open={!!org} onClose={onClose} title={isAlreadyDeleted ? "Permanently Delete Store" : "Delete Store"} size="sm">
+      <div className="space-y-4">
+        {isAlreadyDeleted ? (
+          <>
+            <div className="flex gap-3 p-3 bg-red-50 rounded-lg">
+              <AlertTriangle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-red-800">This store is already soft-deleted.</p>
+                <p className="text-sm text-red-600 mt-0.5">Force delete will permanently remove all store data including products, customers, sales, invoices, and users. This cannot be undone.</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600">Store: <strong>{org.name}</strong></p>
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="secondary" onClick={onClose}>Cancel</Button>
+              <Button variant="danger" onClick={() => onForceDelete(org._id)} loading={forcePending}>
+                Force Delete Permanently
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-gray-600">
+              Soft-deleting <strong>{org.name}</strong> will deactivate the store and hide all its data. The data can be permanently removed later.
+            </p>
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="secondary" onClick={onClose}>Cancel</Button>
+              <Button variant="danger" onClick={() => onSoftDelete(org._id)} loading={softPending}>
+                Delete Store
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
 export default function OrganizationsPage() {
   const qc = useQueryClient();
+  const nav = useNavigate();
+  const { startImpersonation } = useAuthStore();
   const [search, setSearch] = useState("");
   const [storeType, setStoreType] = useState("");
   const [page, setPage] = useState(1);
+  const [showDeleted, setShowDeleted] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const { data: typesRes } = useQuery({ queryKey: ["store-types"], queryFn: orgApi.storeTypes, staleTime: Infinity });
   const storeTypes = typesRes?.data ?? [];
 
   const { data, isLoading } = useQuery({
-    queryKey: ["organizations", { search, storeType, page }],
-    queryFn: () => platformApi.listOrgs({ search: search || undefined, storeType: storeType || undefined, page, limit: 20 }),
+    queryKey: ["organizations", { search, storeType, page, showDeleted }],
+    queryFn: () => platformApi.listOrgs({
+      search: search || undefined,
+      storeType: storeType || undefined,
+      page,
+      limit: 20,
+      includeDeleted: showDeleted ? "true" : undefined,
+    }),
     keepPreviousData: true,
   });
 
@@ -33,14 +86,57 @@ export default function OrganizationsPage() {
     onError: () => toast.error("Failed to update status"),
   });
 
+  const softDelete = useMutation({
+    mutationFn: (id) => platformApi.deleteOrg(id),
+    onSuccess: () => {
+      toast.success("Store deleted");
+      setDeleteTarget(null);
+      qc.invalidateQueries(["organizations"]);
+      qc.invalidateQueries(["platform-stats"]);
+    },
+    onError: (e) => toast.error(e.response?.data?.message || "Delete failed"),
+  });
+
+  const forceDelete = useMutation({
+    mutationFn: (id) => platformApi.forceDeleteOrg(id),
+    onSuccess: () => {
+      toast.success("Store permanently deleted");
+      setDeleteTarget(null);
+      qc.invalidateQueries(["organizations"]);
+      qc.invalidateQueries(["platform-stats"]);
+    },
+    onError: (e) => toast.error(e.response?.data?.message || "Force delete failed"),
+  });
+
+  const impersonate = useMutation({
+    mutationFn: (id) => platformApi.impersonate(id),
+    onSuccess: ({ data }) => {
+      startImpersonation(data.token, data.orgName);
+      nav("/settings");
+      toast.success(`Now editing ${data.orgName}`);
+    },
+    onError: (e) => toast.error(e.response?.data?.message || "Impersonation failed"),
+  });
+
   const orgs = data?.data ?? [];
   const meta = data?.meta ?? {};
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-gray-900">Organizations</h1>
-        <p className="text-sm text-gray-500">All registered stores on the platform.</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">Organizations</h1>
+          <p className="text-sm text-gray-500">All registered stores on the platform.</p>
+        </div>
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={showDeleted}
+            onChange={e => { setShowDeleted(e.target.checked); setPage(1); }}
+            className="rounded border-gray-300"
+          />
+          Show deleted stores
+        </label>
       </div>
 
       {/* Filters */}
@@ -88,7 +184,7 @@ export default function OrganizationsPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {orgs.map(org => (
-                    <tr key={org._id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={org._id} className={`hover:bg-gray-50 transition-colors ${org.isDeleted ? "opacity-60" : ""}`}>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
                           <div className="w-7 h-7 rounded-md bg-primary-100 flex items-center justify-center flex-shrink-0">
@@ -105,18 +201,42 @@ export default function OrganizationsPage() {
                       </td>
                       <td className="py-3 px-4 text-gray-500">{org.email || "—"}</td>
                       <td className="py-3 px-4">
-                        <Badge color={org.isActive ? "green" : "red"}>{org.isActive ? "Active" : "Inactive"}</Badge>
+                        {org.isDeleted
+                          ? <Badge color="red">Deleted</Badge>
+                          : <Badge color={org.isActive ? "green" : "red"}>{org.isActive ? "Active" : "Inactive"}</Badge>
+                        }
                       </td>
                       <td className="py-3 px-4 text-gray-400 text-xs">{format(new Date(org.createdAt), "dd MMM yyyy")}</td>
                       <td className="py-3 px-4">
-                        <button
-                          onClick={() => toggleStatus.mutate({ id: org._id, isActive: !org.isActive })}
-                          disabled={toggleStatus.isPending}
-                          title={org.isActive ? "Deactivate" : "Activate"}
-                          className={`p-1.5 rounded-lg transition-colors ${org.isActive ? "text-emerald-600 hover:bg-emerald-50" : "text-gray-400 hover:bg-gray-100"}`}
-                        >
-                          {org.isActive ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
-                        </button>
+                        <div className="flex items-center gap-1">
+                          {!org.isDeleted && (
+                            <>
+                              <button
+                                onClick={() => toggleStatus.mutate({ id: org._id, isActive: !org.isActive })}
+                                disabled={toggleStatus.isPending}
+                                title={org.isActive ? "Deactivate" : "Activate"}
+                                className={`p-1.5 rounded-lg transition-colors ${org.isActive ? "text-emerald-600 hover:bg-emerald-50" : "text-gray-400 hover:bg-gray-100"}`}
+                              >
+                                {org.isActive ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
+                              </button>
+                              <button
+                                onClick={() => impersonate.mutate(org._id)}
+                                disabled={impersonate.isPending}
+                                title="Edit store settings"
+                                className="p-1.5 rounded-lg text-violet-500 hover:bg-violet-50 transition-colors"
+                              >
+                                <UserCheck size={16} />
+                              </button>
+                            </>
+                          )}
+                          <button
+                            onClick={() => setDeleteTarget(org)}
+                            title={org.isDeleted ? "Force delete" : "Delete store"}
+                            className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors"
+                          >
+                            {org.isDeleted ? <Trash size={16} /> : <Trash2 size={16} />}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -145,6 +265,15 @@ export default function OrganizationsPage() {
           </>
         )}
       </Card>
+
+      <DeleteConfirmModal
+        org={deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onSoftDelete={(id) => softDelete.mutate(id)}
+        onForceDelete={(id) => forceDelete.mutate(id)}
+        softPending={softDelete.isPending}
+        forcePending={forceDelete.isPending}
+      />
     </div>
   );
 }

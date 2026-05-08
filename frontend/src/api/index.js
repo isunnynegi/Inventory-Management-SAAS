@@ -19,6 +19,9 @@ export const platformApi = {
   stats: () => api.get("/organizations/platform-stats").then(r),
   listOrgs: p => api.get("/organizations", { params: p }).then(r),
   toggleOrgStatus: (id, isActive) => api.patch(`/organizations/${id}/status`, { isActive }).then(r),
+  deleteOrg: (id) => api.delete(`/organizations/${id}`).then(r),
+  forceDeleteOrg: (id) => api.delete(`/organizations/${id}/force`).then(r),
+  impersonate: (id) => api.post(`/organizations/${id}/impersonate`).then(r),
 };
 export const categoryApi = {
   list: p => api.get("/categories", { params: p }).then(r),

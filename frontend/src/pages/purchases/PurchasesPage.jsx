@@ -76,16 +76,16 @@ export default function PurchasesPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div><h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Purchases</h1><p className="text-sm text-gray-500 dark:text-gray-400">Stock-in records</p></div>
         <Button onClick={() => { reset({ items: [{ productId: "", qty: 1, costPrice: 0, taxPercent: 0 }], discount: 0, amountPaid: 0, paymentMethod: "cash" }); setModal(true); }}><Plus size={16} /> New Purchase</Button>
       </div>
 
       <Card>
-        <div className="p-4 border-b border-gray-50">
-          <div className="relative max-w-xs">
+        <div className="p-4 border-b border-gray-50 dark:border-gray-700">
+          <div className="relative w-full sm:max-w-xs">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-primary-500" placeholder="Search PO number..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
+            <input className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 bg-white dark:bg-gray-800 dark:text-gray-100" placeholder="Search PO number..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
           </div>
         </div>
         <Table columns={columns} data={rows} loading={isLoading} emptyMsg="No purchases yet" />
@@ -95,7 +95,7 @@ export default function PurchasesPage() {
       {/* Create Modal */}
       <Modal open={modal} onClose={() => setModal(false)} title="New Purchase" size="xl">
         <form onSubmit={handleSubmit(d => createMutation.mutate(d))} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Select label="Supplier" {...register("supplierId")}>
               <option value="">— Select Supplier —</option>
               {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -106,31 +106,33 @@ export default function PurchasesPage() {
           {/* Items */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-medium text-gray-700">Items *</p>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Items *</p>
               <button type="button" onClick={() => append({ productId: "", qty: 1, costPrice: 0, taxPercent: 0 })} className="text-primary-600 text-xs flex items-center gap-1 hover:underline"><PlusCircle size={13} /> Add item</button>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {fields.map((f, i) => (
-                <div key={f.id} className="flex gap-2 items-end">
-                  <div className="flex-1">
-                    <Select error={errors.items?.[i]?.productId?.message} {...register(`items.${i}.productId`, { required: "Required" })}>
+                <div key={f.id} className="border border-gray-100 dark:border-gray-700 rounded-lg p-2.5 space-y-2">
+                  <div className="flex gap-2 items-center">
+                    <Select className="flex-1" error={errors.items?.[i]?.productId?.message} {...register(`items.${i}.productId`, { required: "Required" })}>
                       <option value="">Select product</option>
                       {products.map(p => <option key={p.id} value={p.id}>{p.name} ({p.unit})</option>)}
                     </Select>
+                    {fields.length > 1 && <button type="button" onClick={() => remove(i)} className="text-red-400 flex-shrink-0"><MinusCircle size={18} /></button>}
                   </div>
-                  <div className="w-20"><Input type="number" step="0.01" placeholder="Qty" {...register(`items.${i}.qty`, { valueAsNumber: true })} /></div>
-                  <div className="w-28"><Input type="number" step="0.01" placeholder="Cost" {...register(`items.${i}.costPrice`, { valueAsNumber: true })} /></div>
-                  <div className="w-20"><Input type="number" step="0.01" placeholder="Tax%" {...register(`items.${i}.taxPercent`, { valueAsNumber: true })} /></div>
-                  <div className="w-28 pb-1 text-sm font-medium text-gray-700">
-                    {sym}{((Number(watchItems[i]?.qty)||0)*(Number(watchItems[i]?.costPrice)||0)*(1+(Number(watchItems[i]?.taxPercent)||0)/100)).toFixed(2)}
+                  <div className="grid grid-cols-4 gap-2">
+                    <Input type="number" step="0.01" placeholder="Qty" {...register(`items.${i}.qty`, { valueAsNumber: true })} />
+                    <Input type="number" step="0.01" placeholder="Cost" {...register(`items.${i}.costPrice`, { valueAsNumber: true })} />
+                    <Input type="number" step="0.01" placeholder="Tax%" {...register(`items.${i}.taxPercent`, { valueAsNumber: true })} />
+                    <div className="flex items-end pb-0.5 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      {sym}{((Number(watchItems[i]?.qty)||0)*(Number(watchItems[i]?.costPrice)||0)*(1+(Number(watchItems[i]?.taxPercent)||0)/100)).toFixed(2)}
+                    </div>
                   </div>
-                  {fields.length > 1 && <button type="button" onClick={() => remove(i)} className="text-red-400 pb-1"><MinusCircle size={18} /></button>}
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Input label="Discount" type="number" step="0.01" {...register("discount", { valueAsNumber: true })} />
             <Input label="Amount Paid" type="number" step="0.01" {...register("amountPaid", { valueAsNumber: true })} />
             <Select label="Payment Method" {...register("paymentMethod")}>
@@ -164,12 +166,14 @@ export default function PurchasesPage() {
               <div><span className="text-gray-500">Payment:</span> <Badge color={payBadge[viewModal.paymentStatus]}>{viewModal.paymentStatus}</Badge></div>
               <div><span className="text-gray-500">Method:</span> <span className="capitalize">{viewModal.paymentMethod}</span></div>
             </div>
-            <table className="w-full border border-gray-100 rounded-lg overflow-hidden">
-              <thead className="bg-gray-50 text-xs text-gray-500"><tr><th className="px-3 py-2 text-left">Product</th><th className="px-3 py-2">Qty</th><th className="px-3 py-2">Cost</th><th className="px-3 py-2">Total</th></tr></thead>
+            <div className="overflow-x-auto">
+            <table className="w-full border border-gray-100 dark:border-gray-700 rounded-lg overflow-hidden">
+              <thead className="bg-gray-50 dark:bg-gray-700 text-xs text-gray-500 dark:text-gray-400"><tr><th className="px-3 py-2 text-left">Product</th><th className="px-3 py-2">Qty</th><th className="px-3 py-2">Cost</th><th className="px-3 py-2">Total</th></tr></thead>
               <tbody>{viewModal.items?.map((it, i) => (
-                <tr key={i} className="border-t border-gray-50 text-center"><td className="px-3 py-2 text-left">{it.productName}</td><td>{it.qty} {it.unit}</td><td>{sym}{it.costPrice}</td><td className="font-medium">{sym}{it.lineTotal?.toFixed(2)}</td></tr>
+                <tr key={i} className="border-t border-gray-50 dark:border-gray-700 text-center"><td className="px-3 py-2 text-left">{it.productName}</td><td>{it.qty} {it.unit}</td><td>{sym}{it.costPrice}</td><td className="font-medium">{sym}{it.lineTotal?.toFixed(2)}</td></tr>
               ))}</tbody>
             </table>
+            </div>
             <div className="text-right space-y-1">
               <div>Subtotal: {sym}{viewModal.subtotal?.toFixed(2)}</div>
               {viewModal.taxTotal > 0 && <div>Tax: {sym}{viewModal.taxTotal?.toFixed(2)}</div>}

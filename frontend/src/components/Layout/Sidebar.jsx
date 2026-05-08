@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard, Package, ShoppingCart, TrendingUp, BarChart3, FileText,
   Settings, Users, Truck, UserCircle, Layers, ClipboardList, ChevronLeft,
-  ChevronRight, Store, Scan, Building2, ShieldCheck, Globe, Tag,
+  ChevronRight, Store, Scan, Building2, ShieldCheck, Globe, Tag, X,
 } from "lucide-react";
 import { useAuthStore } from "../../stores/authStore.js";
 
@@ -82,13 +82,26 @@ const STORE_NAV = [
   },
 ];
 
-export default function Sidebar({ collapsed, setCollapsed }) {
+export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) {
   const { user, organization, isAdmin, isSuperAdmin } = useAuthStore();
   const superAdmin = isSuperAdmin();
   const nav = superAdmin ? SUPERADMIN_NAV : STORE_NAV;
 
   return (
-    <aside className={`fixed left-0 top-0 h-full bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex flex-col transition-all duration-200 z-30 ${collapsed ? "w-16" : "w-[220px]"}`}>
+    <aside
+      className={[
+        "fixed left-0 top-0 h-full",
+        "bg-white dark:bg-gray-900",
+        "border-r border-gray-100 dark:border-gray-800",
+        "flex flex-col",
+        "transition-all duration-200",
+        "z-30",
+        // desktop width
+        collapsed ? "w-16" : "w-[220px]",
+        // mobile: slide in/out; desktop: always visible
+        mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+      ].join(" ")}
+    >
       {/* Logo / identity chip */}
       <div className={`flex items-center h-[60px] border-b border-gray-100 dark:border-gray-800 flex-shrink-0 ${collapsed ? "justify-center px-3" : "px-4 gap-3"}`}>
         <div className={`w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 ${superAdmin ? "bg-violet-600" : "bg-primary-600"}`}>
@@ -98,7 +111,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
           }
         </div>
         {!collapsed && (
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             {superAdmin ? (
               <>
                 <p className="text-[13px] font-semibold text-gray-900 dark:text-gray-100 truncate leading-tight">StockKart</p>
@@ -111,6 +124,15 @@ export default function Sidebar({ collapsed, setCollapsed }) {
               </>
             )}
           </div>
+        )}
+        {/* Mobile close button */}
+        {!collapsed && (
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="ml-auto p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors md:hidden"
+          >
+            <X size={16} />
+          </button>
         )}
       </div>
 
@@ -130,8 +152,11 @@ export default function Sidebar({ collapsed, setCollapsed }) {
                 {visibleItems.map(item => {
                   const Icon = item.icon;
                   return (
-                    <NavLink key={item.to} to={item.to}
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
                       title={collapsed ? item.label : undefined}
+                      onClick={() => setMobileOpen(false)}
                       className={({ isActive }) =>
                         `flex items-center rounded-lg text-[13px] font-medium transition-colors
                         ${collapsed ? "justify-center w-10 h-10 mx-auto" : "gap-2.5 px-2.5 py-2"}
@@ -154,10 +179,10 @@ export default function Sidebar({ collapsed, setCollapsed }) {
         })}
       </nav>
 
-      {/* Collapse toggle */}
+      {/* Collapse toggle — desktop only */}
       <button
         onClick={() => setCollapsed(c => !c)}
-        className="flex items-center justify-center h-10 border-t border-gray-100 dark:border-gray-800 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex-shrink-0"
+        className="hidden md:flex items-center justify-center h-10 border-t border-gray-100 dark:border-gray-800 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex-shrink-0"
       >
         {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
       </button>

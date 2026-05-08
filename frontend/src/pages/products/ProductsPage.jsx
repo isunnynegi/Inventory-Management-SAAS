@@ -97,18 +97,18 @@ export default function ProductsPage() {
     <>
       <div className="space-y-5">
         {/* Page header */}
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
           <div>
             <h1 className="text-[22px] font-semibold tracking-tight text-gray-900 dark:text-gray-100">Inventory</h1>
             <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">
               {totalDocs} products · {organization?.storeType ? (organization.storeType.charAt(0).toUpperCase() + organization.storeType.slice(1)) : "General"} catalog
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <button className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium border border-gray-200 bg-white rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-50 transition-colors">
               <Upload size={14} /> Import XLS
             </button>
-            <button className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium border border-gray-200 bg-white rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
+            <button className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-50 transition-colors">
               <Download size={14} /> Export
             </button>
             {isAdmin() && (
@@ -122,12 +122,12 @@ export default function ProductsPage() {
 
         {/* Filter bar */}
         <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl">
-          <div className="flex items-center gap-2.5 p-3 border-b border-gray-50 dark:border-gray-700">
-            <div className="relative flex-1 max-w-xs">
+          <div className="flex flex-wrap items-center gap-2 p-3 border-b border-gray-50 dark:border-gray-700">
+            <div className="relative flex-1 min-w-[160px]">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 dark:focus:border-primary-400 focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900/30 transition bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-                placeholder="Search products, SKU, barcode…"
+                placeholder="Search products…"
                 value={search}
                 onChange={e => { setSearch(e.target.value); setPage(1); }}
               />
@@ -135,7 +135,7 @@ export default function ProductsPage() {
             <select
               value={catFilter}
               onChange={e => { setCatFilter(e.target.value); setSubCatFilter("all"); setPage(1); }}
-              className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 dark:focus:border-primary-400 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200"
+              className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 dark:focus:border-primary-400 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 min-w-0"
             >
               <option value="all">All categories</option>
               {categories.map(c => <option key={c._id || c.id} value={c._id || c.id}>{c.name}</option>)}
@@ -144,19 +144,19 @@ export default function ProductsPage() {
               <select
                 value={subCatFilter}
                 onChange={e => { setSubCatFilter(e.target.value); setPage(1); }}
-                className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 dark:focus:border-primary-400 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200"
+                className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 dark:focus:border-primary-400 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 min-w-0"
               >
                 <option value="all">All subcategories</option>
                 {subcategories.map(s => <option key={s.id || s._id} value={s.name}>{s.name}</option>)}
               </select>
             )}
-            <div className="ml-auto flex items-center gap-1 p-1 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600">
+            <div className="flex items-center gap-1 p-1 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600 ml-auto">
               <button onClick={() => setView("table")}
-                className={`p-1.5 rounded ${view === "table" ? "bg-white shadow-sm text-primary-600" : "text-gray-400 hover:text-gray-600"} transition-colors`}>
+                className={`p-1.5 rounded ${view === "table" ? "bg-white dark:bg-gray-600 shadow-sm text-primary-600" : "text-gray-400 hover:text-gray-600"} transition-colors`}>
                 <LayoutList size={15} />
               </button>
               <button onClick={() => setView("grid")}
-                className={`p-1.5 rounded ${view === "grid" ? "bg-white shadow-sm text-primary-600" : "text-gray-400 hover:text-gray-600"} transition-colors`}>
+                className={`p-1.5 rounded ${view === "grid" ? "bg-white dark:bg-gray-600 shadow-sm text-primary-600" : "text-gray-400 hover:text-gray-600"} transition-colors`}>
                 <LayoutGrid size={15} />
               </button>
             </div>

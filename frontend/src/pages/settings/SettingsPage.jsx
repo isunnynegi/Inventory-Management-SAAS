@@ -128,7 +128,7 @@ function StorefrontSettings({ organization, updateOrg }) {
           />
         </div>
         {form.deliveryEnabled && (
-          <div className="mt-4 grid grid-cols-2 gap-4">
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Delivery Charge (₹)</label>
               <input type="number" min="0" value={form.deliveryCharge}
@@ -165,7 +165,7 @@ function StorefrontSettings({ organization, updateOrg }) {
 
         {/* UPI settings */}
         {form.paymentMethods.includes("upi") && (
-          <div className="mt-4 grid grid-cols-2 gap-4 p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-xl">
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-xl">
             <div className="col-span-2">
               <p className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-3">UPI Settings</p>
             </div>
@@ -213,7 +213,7 @@ function StorefrontSettings({ organization, updateOrg }) {
               placeholder="Fresh groceries delivered to your door"
               className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 bg-white dark:bg-gray-800 dark:text-gray-100 transition" />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Banner Title</label>
               <input type="text" value={form.branding.bannerTitle} maxLength={100}
@@ -309,7 +309,7 @@ export default function SettingsPage() {
           <div className="space-y-6">
             <Card className="p-6">
               <h2 className="font-semibold text-gray-800 dark:text-gray-200 mb-4">Store Information</h2>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <Input label="Store Name *" error={errors.name?.message} {...register("name", { required: "Required" })} />
                 </div>
@@ -335,7 +335,7 @@ export default function SettingsPage() {
 
             <Card className="p-6">
               <h2 className="font-semibold text-gray-800 dark:text-gray-200 mb-4">Address</h2>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="col-span-2"><Input label="Street" {...register("address.street")} /></div>
                 <Input label="City" {...register("address.city")} />
                 <Input label="State" {...register("address.state")} />

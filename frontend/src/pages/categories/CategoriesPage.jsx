@@ -248,7 +248,7 @@ export default function CategoriesPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Categories</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">Manage categories and their subcategories</p>

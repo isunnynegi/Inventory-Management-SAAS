@@ -189,11 +189,9 @@ export default function StorefrontOrdersPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Storefront Orders</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Customer orders from your online store.</p>
-        </div>
+      <div>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Storefront Orders</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Customer orders from your online store.</p>
       </div>
 
       {/* Stats */}

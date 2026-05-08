@@ -97,14 +97,19 @@ export function Modal({ open, onClose, title, children, size="md" }) {
   if (!open) return null;
   const sizes = { sm:"max-w-sm", md:"max-w-lg", lg:"max-w-2xl", xl:"max-w-4xl" };
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/50 dark:bg-black/70" onClick={onClose} />
-      <div className={cn("relative bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full overflow-hidden", sizes[size])}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+      <div className={cn(
+        "relative bg-white dark:bg-gray-800 shadow-xl w-full flex flex-col",
+        "rounded-t-2xl sm:rounded-xl",
+        "max-h-[92vh] sm:max-h-[90vh]",
+        sizes[size]
+      )}>
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
           <h3 className="font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
-          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition"><X size={18} /></button>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition p-1"><X size={18} /></button>
         </div>
-        <div className="p-6">{children}</div>
+        <div className="p-5 sm:p-6 overflow-y-auto">{children}</div>
       </div>
     </div>
   );

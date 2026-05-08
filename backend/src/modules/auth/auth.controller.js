@@ -4,8 +4,10 @@ import * as svc from "./auth.service.js";
 import Organization from "../organization/organization.model.js";
 
 const setCookie = (res, token) => res.cookie("refreshToken", token, {
-  httpOnly: true, secure: process.env.NODE_ENV === "production",
-  sameSite: "strict", maxAge: 30 * 24 * 60 * 60 * 1000
+  httpOnly: true,
+  secure: true,           // required for sameSite=none
+  sameSite: "none",       // must be none for cross-origin (Vercel → Render)
+  maxAge: 30 * 24 * 60 * 60 * 1000,
 });
 
 export const register = asyncHandler(async (req, res) => {
@@ -28,10 +30,12 @@ export const refreshToken = asyncHandler(async (req, res) => {
   return ApiResponse.ok(res, "Token refreshed", { accessToken: tokens.accessToken });
 });
 
+const clearCookie = (res) => res.clearCookie("refreshToken", { httpOnly: true, secure: true, sameSite: "none" });
+
 export const logout = asyncHandler(async (req, res) => {
   const token = req.cookies?.refreshToken || req.body?.refreshToken;
   await svc.logout(req.user._id, token);
-  res.clearCookie("refreshToken");
+  clearCookie(res);
   return ApiResponse.ok(res, "Logged out");
 });
 
@@ -54,6 +58,6 @@ export const resetPassword = asyncHandler(async (req, res) => {
 
 export const changePassword = asyncHandler(async (req, res) => {
   await svc.changePassword(req.user._id, req.body.currentPassword, req.body.newPassword);
-  res.clearCookie("refreshToken");
+  clearCookie(res);
   return ApiResponse.ok(res, "Password changed. Please log in again.");
 });

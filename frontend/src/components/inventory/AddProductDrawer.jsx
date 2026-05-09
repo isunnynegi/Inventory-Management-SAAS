@@ -143,7 +143,7 @@ export default function AddProductDrawer({ open, onClose, editProduct = null }) 
   // Mutation
   const mutation = useMutation({
     mutationFn: (payload) =>
-      editProduct ? productApi.update(editProduct.id, payload) : productApi.create(payload),
+      editProduct ? productApi.update(editProduct._id || editProduct.id, payload) : productApi.create(payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["products"] });
       toast.success(editProduct ? "Product updated!" : "Product added!");

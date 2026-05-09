@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { couponApi } from "../../api/index.js";
 import { Tag, Plus, Pencil, Trash2, X, Check } from "lucide-react";
+import { SearchableSelect } from "../../components/ui/index.jsx";
 import toast from "react-hot-toast";
 
 const EMPTY_FORM = { code: "", type: "percent", value: "", minOrderAmount: "", maxUses: "", expiresAt: "", isActive: true };
@@ -35,11 +36,11 @@ function CouponForm({ initial, onSave, onCancel, loading }) {
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1">Discount Type *</label>
-          <select value={form.type} onChange={e => set("type", e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-primary-500 bg-white transition">
-            <option value="percent">Percentage (%)</option>
-            <option value="fixed">Fixed Amount (₹)</option>
-          </select>
+          <SearchableSelect
+            options={[{ value: "percent", label: "Percentage (%)" }, { value: "fixed", label: "Fixed Amount (₹)" }]}
+            value={form.type}
+            onChange={v => set("type", v)}
+          />
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1">

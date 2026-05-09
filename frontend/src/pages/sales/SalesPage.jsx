@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { saleApi, customerApi, productApi, invoiceApi } from "../../api/index.js";
-import { Button, Card, Table, Pagination, Modal, Badge, Input, Select } from "../../components/ui/index.jsx";
+import { Button, Card, Table, Pagination, Modal, Badge, Input, Select, SearchableSelect } from "../../components/ui/index.jsx";
 import { Plus, Eye, FileText, PlusCircle, MinusCircle, Search } from "lucide-react";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
@@ -109,10 +109,15 @@ export default function SalesPage() {
       <Modal open={modal} onClose={() => setModal(false)} title="New Sale" size="xl">
         <form onSubmit={handleSubmit(d => createMutation.mutate(d))} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Select label="Customer" {...register("customerId")}>
-              <option value="">— Walk-in Customer —</option>
-              {customers.map(c => <option key={c.id} value={c.id}>{c.name} {c.phone ? `(${c.phone})` : ""}</option>)}
-            </Select>
+            <Controller control={control} name="customerId" render={({ field }) => (
+              <SearchableSelect
+                label="Customer"
+                placeholder="— Walk-in Customer —"
+                options={[{ value: "", label: "Walk-in Customer" }, ...customers.map(c => ({ value: c._id || c.id, label: `${c.name}${c.phone ? ` (${c.phone})` : ""}` }))]}
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )} />
             <Input label="Date" type="date" defaultValue={new Date().toISOString().split("T")[0]} {...register("date")} />
           </div>
 
@@ -125,15 +130,19 @@ export default function SalesPage() {
               {fields.map((f, i) => (
                 <div key={f.id} className="border border-gray-100 dark:border-gray-700 rounded-lg p-3 space-y-3">
                   <div className="flex gap-2 items-end">
-                    <div className="flex-1">
-                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Product *</label>
-                      <select className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-gray-100"
-                        {...register(`items.${i}.productId`, { required: true, onChange: (e) => onProductSelect(i, e.target.value) })}>
-                        <option value="">— Select product —</option>
-                        {products.map(p => <option key={p._id || p.id} value={p._id || p.id}>{p.name} (Stock: {p.stock})</option>)}
-                      </select>
-                    </div>
-                    {fields.length > 1 && <button type="button" onClick={() => remove(i)} className="text-red-400 flex-shrink-0 mb-2"><MinusCircle size={18} /></button>}
+                    <Controller control={control} name={`items.${i}.productId`} rules={{ required: true }}
+                      render={({ field }) => (
+                        <SearchableSelect
+                          className="flex-1"
+                          label="Product *"
+                          placeholder="— Select product —"
+                          options={products.map(p => ({ value: p._id || p.id, label: `${p.name} (Stock: ${p.stock})` }))}
+                          value={field.value}
+                          onChange={(val) => { field.onChange(val); onProductSelect(i, val); }}
+                        />
+                      )}
+                    />
+                    {fields.length > 1 && <button type="button" onClick={() => remove(i)} className="text-red-400 flex-shrink-0 mb-0.5"><MinusCircle size={18} /></button>}
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                     <Input label="Qty" type="number" step="1" min="1" {...register(`items.${i}.qty`, { valueAsNumber: true, min: 1 })} />
@@ -154,9 +163,14 @@ export default function SalesPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Input label="Discount" type="number" step="0.01" {...register("discount", { valueAsNumber: true })} />
             <Input label="Amount Paid" type="number" step="0.01" {...register("amountPaid", { valueAsNumber: true })} />
-            <Select label="Payment" {...register("paymentMethod")}>
-              {["cash","bank","upi","credit","other"].map(m => <option key={m} value={m} className="capitalize">{m}</option>)}
-            </Select>
+            <Controller control={control} name="paymentMethod" render={({ field }) => (
+              <SearchableSelect
+                label="Payment Method"
+                options={["cash","bank","upi","credit","other"].map(m => ({ value: m, label: m.charAt(0).toUpperCase() + m.slice(1) }))}
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )} />
           </div>
 
           <div className="bg-gray-50 rounded-lg p-4 text-sm space-y-1">

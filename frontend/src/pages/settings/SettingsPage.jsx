@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { orgApi } from "../../api/index.js";
-import { Card, Button, Input } from "../../components/ui/index.jsx";
+import { Card, Button, Input, SearchableSelect } from "../../components/ui/index.jsx";
 import { useAuthStore } from "../../stores/authStore.js";
 import toast from "react-hot-toast";
 import { Globe, Copy, ExternalLink } from "lucide-react";
@@ -252,7 +252,7 @@ export default function SettingsPage() {
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState("General");
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm({ mode: "onChange",
+  const { register, handleSubmit, watch, control, formState: { errors } } = useForm({ mode: "onChange",
     defaultValues: {
       name: organization?.name ?? "",
       currency: organization?.currency ?? "INR",
@@ -324,10 +324,14 @@ export default function SettingsPage() {
                 <Input label="Phone" {...register("phone")} />
                 <Input label="Email" type="email" {...register("email")} />
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Currency</label>
-                  <select className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-sm outline-none bg-white dark:bg-gray-800 dark:text-gray-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-100" {...register("currency")}>
-                    {currencies.map(c => <option key={c.code} value={c.code}>{c.code} ({c.sym})</option>)}
-                  </select>
+                  <Controller control={control} name="currency" render={({ field }) => (
+                    <SearchableSelect
+                      label="Currency"
+                      options={currencies.map(c => ({ value: c.code, label: `${c.code} (${c.sym})` }))}
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  )} />
                 </div>
                 <Input label="Currency Symbol" {...register("currencySymbol")} />
               </div>

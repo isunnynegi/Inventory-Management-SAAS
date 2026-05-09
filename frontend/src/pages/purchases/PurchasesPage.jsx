@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { purchaseApi, supplierApi, productApi } from "../../api/index.js";
-import { Button, Card, Table, Pagination, Modal, Badge, Input, Select, Textarea } from "../../components/ui/index.jsx";
+import { Button, Card, Table, Pagination, Modal, Badge, Input, Select, Textarea, SearchableSelect } from "../../components/ui/index.jsx";
 import { Plus, Eye, Trash2, Search, PlusCircle, MinusCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
@@ -96,10 +96,15 @@ export default function PurchasesPage() {
       <Modal open={modal} onClose={() => setModal(false)} title="New Purchase" size="xl">
         <form onSubmit={handleSubmit(d => createMutation.mutate(d))} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Select label="Supplier" {...register("supplierId")}>
-              <option value="">— Select Supplier —</option>
-              {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </Select>
+            <Controller control={control} name="supplierId" render={({ field }) => (
+              <SearchableSelect
+                label="Supplier"
+                placeholder="— Select Supplier —"
+                options={[{ value: "", label: "No supplier" }, ...suppliers.map(s => ({ value: s._id || s.id, label: s.name }))]}
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )} />
             <Input label="Date" type="date" defaultValue={new Date().toISOString().split("T")[0]} {...register("date")} />
           </div>
 
@@ -111,20 +116,32 @@ export default function PurchasesPage() {
             </div>
             <div className="space-y-3">
               {fields.map((f, i) => (
-                <div key={f.id} className="border border-gray-100 dark:border-gray-700 rounded-lg p-2.5 space-y-2">
-                  <div className="flex gap-2 items-center">
-                    <Select className="flex-1" error={errors.items?.[i]?.productId?.message} {...register(`items.${i}.productId`, { required: "Required" })}>
-                      <option value="">Select product</option>
-                      {products.map(p => <option key={p.id} value={p.id}>{p.name} ({p.unit})</option>)}
-                    </Select>
-                    {fields.length > 1 && <button type="button" onClick={() => remove(i)} className="text-red-400 flex-shrink-0"><MinusCircle size={18} /></button>}
+                <div key={f.id} className="border border-gray-100 dark:border-gray-700 rounded-lg p-3 space-y-3">
+                  <div className="flex gap-2 items-end">
+                    <Controller control={control} name={`items.${i}.productId`} rules={{ required: "Required" }}
+                      render={({ field }) => (
+                        <SearchableSelect
+                          className="flex-1"
+                          label="Product *"
+                          placeholder="— Select product —"
+                          error={errors.items?.[i]?.productId?.message}
+                          options={products.map(p => ({ value: p._id || p.id, label: `${p.name} (${p.unit})` }))}
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      )}
+                    />
+                    {fields.length > 1 && <button type="button" onClick={() => remove(i)} className="text-red-400 flex-shrink-0 mb-0.5"><MinusCircle size={18} /></button>}
                   </div>
-                  <div className="grid grid-cols-4 gap-2">
-                    <Input type="number" step="0.01" placeholder="Qty" {...register(`items.${i}.qty`, { valueAsNumber: true })} />
-                    <Input type="number" step="0.01" placeholder="Cost" {...register(`items.${i}.costPrice`, { valueAsNumber: true })} />
-                    <Input type="number" step="0.01" placeholder="Tax%" {...register(`items.${i}.taxPercent`, { valueAsNumber: true })} />
-                    <div className="flex items-end pb-0.5 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      {sym}{((Number(watchItems[i]?.qty)||0)*(Number(watchItems[i]?.costPrice)||0)*(1+(Number(watchItems[i]?.taxPercent)||0)/100)).toFixed(2)}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <Input label="Qty" type="number" step="0.01" {...register(`items.${i}.qty`, { valueAsNumber: true })} />
+                    <Input label="Cost Price" type="number" step="0.01" {...register(`items.${i}.costPrice`, { valueAsNumber: true })} />
+                    <Input label="Tax %" type="number" step="0.01" {...register(`items.${i}.taxPercent`, { valueAsNumber: true })} />
+                    <div className="flex flex-col">
+                      <span className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Line Total</span>
+                      <div className="flex items-center h-9 px-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm font-semibold text-primary-600 dark:text-primary-400">
+                        {sym}{((Number(watchItems[i]?.qty)||0)*(Number(watchItems[i]?.costPrice)||0)*(1+(Number(watchItems[i]?.taxPercent)||0)/100)).toFixed(2)}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -135,9 +152,14 @@ export default function PurchasesPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Input label="Discount" type="number" step="0.01" {...register("discount", { valueAsNumber: true })} />
             <Input label="Amount Paid" type="number" step="0.01" {...register("amountPaid", { valueAsNumber: true })} />
-            <Select label="Payment Method" {...register("paymentMethod")}>
-              {["cash","bank","upi","credit","other"].map(m => <option key={m} value={m} className="capitalize">{m}</option>)}
-            </Select>
+            <Controller control={control} name="paymentMethod" render={({ field }) => (
+              <SearchableSelect
+                label="Payment Method"
+                options={["cash","bank","upi","credit","other"].map(m => ({ value: m, label: m.charAt(0).toUpperCase() + m.slice(1) }))}
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )} />
           </div>
 
           <div className="bg-gray-50 rounded-lg p-4 text-sm space-y-1">

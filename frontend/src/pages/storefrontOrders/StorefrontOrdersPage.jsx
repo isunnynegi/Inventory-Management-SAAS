@@ -4,7 +4,7 @@ import { Search, ShoppingBag, MapPin, Store, Eye, Check, X, ChevronDown } from "
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { sfOrderApi } from "../../api/index.js";
-import { Card, Badge, Spinner, Modal, Button } from "../../components/ui/index.jsx";
+import { Card, Badge, Spinner, Modal, Button, SearchableSelect } from "../../components/ui/index.jsx";
 
 const STATUS_OPTIONS = [
   { value: "", label: "All statuses" },
@@ -42,15 +42,19 @@ function OrderDetailModal({ order, onClose, onUpdateStatus, onConfirmPayment, st
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Order Status</label>
-            <select value={newStatus} onChange={e => setNewStatus(e.target.value)} className="input text-sm">
-              {STATUS_OPTIONS.filter(s => s.value).map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-            </select>
+            <SearchableSelect
+              options={STATUS_OPTIONS.filter(s => s.value)}
+              value={newStatus}
+              onChange={setNewStatus}
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Payment Status</label>
-            <select value={newPayment} onChange={e => setNewPayment(e.target.value)} className="input text-sm">
-              {["pending", "paid", "failed", "refunded"].map(s => <option key={s} value={s} className="capitalize">{s}</option>)}
-            </select>
+            <SearchableSelect
+              options={["pending", "paid", "failed", "refunded"].map(s => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))}
+              value={newPayment}
+              onChange={setNewPayment}
+            />
           </div>
         </div>
         <div>
@@ -218,10 +222,12 @@ export default function StorefrontOrdersPage() {
           <input className="input pl-9 text-sm" placeholder="Search by order # or customer…"
             value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
         </div>
-        <select className="input text-sm w-44 appearance-none bg-white dark:bg-gray-800" value={status}
-          onChange={e => { setStatus(e.target.value); setPage(1); }}>
-          {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-        </select>
+        <SearchableSelect
+          className="w-44"
+          options={STATUS_OPTIONS}
+          value={status}
+          onChange={v => { setStatus(v); setPage(1); }}
+        />
       </div>
 
       <Card className="overflow-hidden">

@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useNavigate } from "react-router-dom";
@@ -8,6 +8,7 @@ import { authApi, orgApi } from "../../api/index.js";
 import toast from "react-hot-toast";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { SearchableSelect } from "../../components/ui/index.jsx";
 
 const schema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -49,7 +50,7 @@ export default function RegisterPage() {
   });
   const storeTypes = storeTypesRes?.data ?? Object.keys(STORE_TYPE_LABELS);
 
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const { register, handleSubmit, control, formState: { errors } } = useForm({
     mode: "onChange",
     resolver: zodResolver(schema),
     defaultValues: { storeType: "general" },
@@ -125,12 +126,13 @@ export default function RegisterPage() {
 
               <div>
                 <label className="field-label">Store type</label>
-                <select className="input appearance-none bg-white" {...register("storeType")}
-                  style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center", paddingRight: "30px" }}>
-                  {storeTypes.map(v => (
-                    <option key={v} value={v}>{labelFor(v)}</option>
-                  ))}
-                </select>
+                <Controller control={control} name="storeType" render={({ field }) => (
+                  <SearchableSelect
+                    options={storeTypes.map(v => ({ value: v, label: labelFor(v) }))}
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
+                )} />
               </div>
             </div>
 

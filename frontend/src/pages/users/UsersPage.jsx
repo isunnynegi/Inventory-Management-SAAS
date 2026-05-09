@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { userApi } from "../../api/index.js";
-import { Button, Card, Table, Pagination, Modal, Input, Select, Badge, ConfirmModal } from "../../components/ui/index.jsx";
+import { Button, Card, Table, Pagination, Modal, Input, Badge, ConfirmModal, SearchableSelect } from "../../components/ui/index.jsx";
 import { Plus, UserX, UserCheck, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -13,7 +13,7 @@ export default function UsersPage() {
   const [page, setPage] = useState(1);
   const [modal, setModal] = useState(false);
   const [confirm, setConfirm] = useState(null);
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({ mode: "onChange", defaultValues: { role: "staff" } });
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm({ mode: "onChange", defaultValues: { role: "staff" } });
 
   const { data, isLoading } = useQuery({ queryKey: ["users", page], queryFn: () => userApi.list({ page, limit: 20 }) });
 
@@ -57,9 +57,14 @@ export default function UsersPage() {
         <form onSubmit={handleSubmit(d => inviteMutation.mutate(d))} className="space-y-4">
           <Input label="Full Name *" error={errors.name?.message} {...register("name", { required: "Required" })} />
           <Input label="Email *" type="email" error={errors.email?.message} {...register("email", { required: "Required" })} />
-          <Select label="Role" {...register("role")}>
-            <option value="staff">Staff</option><option value="admin">Admin</option>
-          </Select>
+          <Controller control={control} name="role" render={({ field }) => (
+            <SearchableSelect
+              label="Role"
+              options={[{ value: "staff", label: "Staff" }, { value: "admin", label: "Admin" }]}
+              value={field.value}
+              onChange={field.onChange}
+            />
+          )} />
           <div className="flex justify-end gap-3">
             <Button type="button" variant="secondary" onClick={() => setModal(false)}>Cancel</Button>
             <Button type="submit" loading={inviteMutation.isPending}>Send Invite</Button>

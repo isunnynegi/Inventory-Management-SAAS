@@ -1,7 +1,7 @@
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { Loader2, X, ChevronLeft, ChevronRight } from "lucide-react";
-import { forwardRef } from "react";
+import { Loader2, X, ChevronLeft, ChevronRight, ChevronDown, Search, Check } from "lucide-react";
+import { forwardRef, useState, useRef, useEffect } from "react";
 
 export const cn = (...i) => twMerge(clsx(i));
 
@@ -59,6 +59,96 @@ export const Select = forwardRef(({ label, error, children, className, ...p }, r
   </div>
 ));
 Select.displayName = "Select";
+
+export function SearchableSelect({ label, error, options = [], value, onChange, placeholder = "Select…", className, disabled }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const containerRef = useRef(null);
+  const searchRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpen(false);
+        setQuery("");
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  useEffect(() => {
+    if (open) setTimeout(() => searchRef.current?.focus(), 0);
+  }, [open]);
+
+  const filtered = options.filter(o => !query || String(o.label).toLowerCase().includes(query.toLowerCase()));
+  const selectedLabel = options.find(o => String(o.value) === String(value))?.label;
+
+  return (
+    <div ref={containerRef} className={cn("relative", className)}>
+      {label && <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{label}</label>}
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen(v => !v)}
+        className={cn(
+          "w-full px-3 py-2 rounded-lg border text-sm text-left flex items-center justify-between gap-2 outline-none transition bg-white dark:bg-gray-800",
+          error
+            ? "border-red-400 focus:ring-2 focus:ring-red-100"
+            : "border-gray-200 dark:border-gray-600 focus:border-primary-500 dark:focus:border-primary-400 focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900/30",
+          disabled && "opacity-60 cursor-not-allowed"
+        )}
+      >
+        <span className={cn("truncate flex-1", selectedLabel ? "text-gray-900 dark:text-gray-100" : "text-gray-400 dark:text-gray-500")}>
+          {selectedLabel || placeholder}
+        </span>
+        <ChevronDown size={14} className={cn("flex-shrink-0 text-gray-400 transition-transform duration-200", open && "rotate-180")} />
+      </button>
+
+      {open && (
+        <div className="absolute z-[60] mt-1 w-full min-w-[180px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg">
+          <div className="p-2 border-b border-gray-100 dark:border-gray-700">
+            <div className="relative">
+              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                ref={searchRef}
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === "Escape") { setOpen(false); setQuery(""); }
+                  if (e.key === "Enter" && filtered.length === 1) { onChange(filtered[0].value); setOpen(false); setQuery(""); }
+                }}
+                placeholder="Search…"
+                className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 dark:border-gray-600 rounded-md outline-none focus:border-primary-400 bg-white dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
+              />
+            </div>
+          </div>
+          <div className="max-h-52 overflow-y-auto py-1">
+            {filtered.length === 0 ? (
+              <p className="px-3 py-2 text-sm text-gray-400 dark:text-gray-500">No results</p>
+            ) : filtered.map(o => (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => { onChange(o.value); setOpen(false); setQuery(""); }}
+                className={cn(
+                  "w-full text-left px-3 py-2 text-sm flex items-center justify-between hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors",
+                  String(o.value) === String(value)
+                    ? "text-primary-600 dark:text-primary-400 font-medium"
+                    : "text-gray-700 dark:text-gray-300"
+                )}
+              >
+                <span className="truncate flex-1">{o.label}</span>
+                {String(o.value) === String(value) && <Check size={13} className="flex-shrink-0 text-primary-600 dark:text-primary-400 ml-2" />}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+    </div>
+  );
+}
 
 export const Textarea = forwardRef(({ label, error, className, ...p }, ref) => (
   <div>

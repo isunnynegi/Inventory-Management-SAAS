@@ -1,5 +1,6 @@
 import { ScanLine } from "lucide-react";
 import ChipsField from "./ChipsField.jsx";
+import { SearchableSelect } from "../ui/index.jsx";
 
 const inputCls = "w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 dark:focus:border-primary-400 focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900/30 transition bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500";
 
@@ -58,15 +59,12 @@ export default function DynField({ field, value, onChange, options: overrideOpti
     return (
       <div className="field-group">
         {label}
-        <select
+        <SearchableSelect
+          options={opts.map(o => ({ value: o.v, label: o.l }))}
           value={value || ""}
-          onChange={e => onChange(e.target.value)}
-          className={inputCls + " appearance-none"}
-          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center", paddingRight: "30px" }}
-        >
-          <option value="">Select…</option>
-          {opts.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
-        </select>
+          onChange={onChange}
+          placeholder="Select…"
+        />
         {hint}
       </div>
     );

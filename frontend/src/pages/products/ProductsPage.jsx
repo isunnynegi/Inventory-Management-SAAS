@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { productApi, categoryApi } from "../../api/index.js";
 import { useAuthStore } from "../../stores/authStore.js";
 import AddProductDrawer from "../../components/inventory/AddProductDrawer.jsx";
+import { SearchableSelect } from "../../components/ui/index.jsx";
 import { Search, Upload, Download, Plus, LayoutList, LayoutGrid, Pencil, Trash2, AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -132,23 +133,21 @@ export default function ProductsPage() {
                 onChange={e => { setSearch(e.target.value); setPage(1); }}
               />
             </div>
-            <select
+            <SearchableSelect
+              className="min-w-[160px]"
+              placeholder="All categories"
+              options={[{ value: "all", label: "All categories" }, ...categories.map(c => ({ value: c._id || c.id, label: c.name }))]}
               value={catFilter}
-              onChange={e => { setCatFilter(e.target.value); setSubCatFilter("all"); setPage(1); }}
-              className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 dark:focus:border-primary-400 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 min-w-0"
-            >
-              <option value="all">All categories</option>
-              {categories.map(c => <option key={c._id || c.id} value={c._id || c.id}>{c.name}</option>)}
-            </select>
+              onChange={v => { setCatFilter(v); setSubCatFilter("all"); setPage(1); }}
+            />
             {catFilter !== "all" && subcategories.length > 0 && (
-              <select
+              <SearchableSelect
+                className="min-w-[160px]"
+                placeholder="All subcategories"
+                options={[{ value: "all", label: "All subcategories" }, ...subcategories.map(s => ({ value: s.name, label: s.name }))]}
                 value={subCatFilter}
-                onChange={e => { setSubCatFilter(e.target.value); setPage(1); }}
-                className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 dark:focus:border-primary-400 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 min-w-0"
-              >
-                <option value="all">All subcategories</option>
-                {subcategories.map(s => <option key={s.id || s._id} value={s.name}>{s.name}</option>)}
-              </select>
+                onChange={v => { setSubCatFilter(v); setPage(1); }}
+              />
             )}
             <div className="flex items-center gap-1 p-1 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600 ml-auto">
               <button onClick={() => setView("table")}

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { stockAdjApi, productApi } from "../../api/index.js";
-import { Button, Card, Table, Pagination, Modal, Badge, Input, Select } from "../../components/ui/index.jsx";
+import { Button, Card, Table, Pagination, Modal, Badge, Input, SearchableSelect } from "../../components/ui/index.jsx";
 import { Plus, Search, TrendingUp, TrendingDown } from "lucide-react";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
@@ -11,7 +11,7 @@ export default function StockAdjustmentsPage() {
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [modal, setModal] = useState(false);
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({ mode: "onChange", defaultValues: { type: "increase" } });
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm({ mode: "onChange", defaultValues: { type: "increase" } });
 
   const { data: prodData } = useQuery({ queryKey: ["products-all"], queryFn: () => productApi.list({ limit: 200 }) });
   const products = prodData?.data || [];
@@ -57,14 +57,28 @@ export default function StockAdjustmentsPage() {
       </Card>
       <Modal open={modal} onClose={() => setModal(false)} title="Stock Adjustment">
         <form onSubmit={handleSubmit(d => mutation.mutate(d))} className="space-y-4">
-          <Select label="Product *" error={errors.productId?.message} {...register("productId", { required: "Required" })}>
-            <option value="">— Select product —</option>
-            {products.map(p => <option key={p.id} value={p.id}>{p.name} (Current: {p.stock} {p.unit})</option>)}
-          </Select>
-          <Select label="Adjustment Type *" {...register("type", { required: "Required" })}>
-            <option value="increase">Increase (Add stock)</option>
-            <option value="decrease">Decrease (Remove stock)</option>
-          </Select>
+          <Controller control={control} name="productId" rules={{ required: "Required" }}
+            render={({ field }) => (
+              <SearchableSelect
+                label="Product *"
+                placeholder="— Select product —"
+                error={errors.productId?.message}
+                options={products.map(p => ({ value: p._id || p.id, label: `${p.name} (Stock: ${p.stock} ${p.unit})` }))}
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
+          />
+          <Controller control={control} name="type" rules={{ required: "Required" }}
+            render={({ field }) => (
+              <SearchableSelect
+                label="Adjustment Type *"
+                options={[{ value: "increase", label: "Increase (Add stock)" }, { value: "decrease", label: "Decrease (Remove stock)" }]}
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
+          />
           <Input label="Quantity *" type="number" step="0.01" error={errors.qty?.message} {...register("qty", { required: "Required", min: { value: 0.01, message: "Min 0.01" } })} />
           <Input label="Reason" placeholder="e.g. Damaged goods, Theft, Count correction..." {...register("reason")} />
           <div className="flex justify-end gap-3">

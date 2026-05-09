@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { platformApi, orgApi } from "../../api/index.js";
-import { Card, Badge, Spinner, Modal, Button } from "../../components/ui/index.jsx";
+import { Card, Badge, Spinner, Modal, Button, SearchableSelect } from "../../components/ui/index.jsx";
 import { Search, Building2, ToggleLeft, ToggleRight, Trash2, Trash, UserCheck, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
@@ -150,14 +150,13 @@ export default function OrganizationsPage() {
             onChange={e => { setSearch(e.target.value); setPage(1); }}
           />
         </div>
-        <select
-          className="input text-sm w-48 appearance-none bg-white"
+        <SearchableSelect
+          className="w-48"
+          placeholder="All store types"
+          options={[{ value: "", label: "All store types" }, ...storeTypes.map(v => ({ value: v, label: STORE_TYPE_LABELS[v] ?? v }))]}
           value={storeType}
-          onChange={e => { setStoreType(e.target.value); setPage(1); }}
-        >
-          <option value="">All store types</option>
-          {storeTypes.map(v => <option key={v} value={v}>{STORE_TYPE_LABELS[v] ?? v}</option>)}
-        </select>
+          onChange={v => { setStoreType(v); setPage(1); }}
+        />
       </div>
 
       <Card className="overflow-hidden">

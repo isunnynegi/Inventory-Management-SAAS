@@ -59,8 +59,10 @@ export default function SalesPage() {
         const taxAmt = lineBase * (Number(i.taxPercent) / 100);
         return { ...i, qty: Number(i.qty), sellingPrice: Number(i.sellingPrice), taxPercent: Number(i.taxPercent), taxAmount: taxAmt, lineTotal: lineBase + taxAmt };
       });
-      const custObj = customers.find(c => c.id === d.customerId);
-      return saleApi.create({ ...d, items, subtotal, taxTotal, discount: Number(d.discount), totalAmount: total, amountPaid: Number(d.amountPaid), customerName: custObj?.name });
+      const custObj = customers.find(c => (c._id || c.id) === d.customerId);
+      const payload = { ...d, items, subtotal, taxTotal, discount: Number(d.discount), totalAmount: total, amountPaid: Number(d.amountPaid), customerName: custObj?.name };
+      if (!payload.customerId) delete payload.customerId;
+      return saleApi.create(payload);
     },
     onSuccess: () => { qc.invalidateQueries(["sales"]); qc.invalidateQueries(["products"]); toast.success("Sale recorded!"); setModal(false); reset(); },
     onError: (e) => toast.error(e.response?.data?.message || "Error"),

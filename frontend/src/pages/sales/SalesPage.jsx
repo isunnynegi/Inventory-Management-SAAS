@@ -19,7 +19,7 @@ export default function SalesPage() {
   const [viewModal, setViewModal] = useState(null);
   const [search, setSearch] = useState("");
 
-  const { register, handleSubmit, reset, watch, control, formState: { errors } } = useForm({
+  const { register, handleSubmit, reset, watch, control, setValue, formState: { errors } } = useForm({
     mode: "onChange",
     defaultValues: { items: [{ productId: "", qty: 1, sellingPrice: 0, taxPercent: 0 }], discount: 0, amountPaid: 0, paymentMethod: "cash" }
   });
@@ -44,9 +44,12 @@ export default function SalesPage() {
   }, 0);
   const total = subtotal + taxTotal - Number(watchDiscount);
 
-  const onProductSelect = (i, pid) => {
-    const p = products.find(x => x.id === pid);
-    if (p) { /* price auto-fill handled by onChange */ }
+  const onProductSelect = (index, pid) => {
+    const p = products.find(x => (x._id || x.id) === pid);
+    if (p) {
+      setValue(`items.${index}.sellingPrice`, p.sellingPrice ?? 0);
+      setValue(`items.${index}.taxPercent`, p.taxPercent ?? 0);
+    }
   };
 
   const createMutation = useMutation({
@@ -120,24 +123,27 @@ export default function SalesPage() {
             </div>
             <div className="space-y-3">
               {fields.map((f, i) => (
-                <div key={f.id} className="border border-gray-100 dark:border-gray-700 rounded-lg p-2.5 space-y-2">
-                  <div className="flex gap-2 items-center">
-                    <select className="flex-1 px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-gray-100"
-                      {...register(`items.${i}.productId`, { required: true, onChange: (e) => {
-                        const p = products.find(x => x.id === e.target.value);
-                        if (p) { document.querySelectorAll(`[name="items.${i}.sellingPrice"]`)[0].value = p.sellingPrice; }
-                      }})}>
-                      <option value="">Select product</option>
-                      {products.map(p => <option key={p.id} value={p.id}>{p.name} (Stock: {p.stock})</option>)}
-                    </select>
-                    {fields.length > 1 && <button type="button" onClick={() => remove(i)} className="text-red-400 flex-shrink-0"><MinusCircle size={18} /></button>}
+                <div key={f.id} className="border border-gray-100 dark:border-gray-700 rounded-lg p-3 space-y-3">
+                  <div className="flex gap-2 items-end">
+                    <div className="flex-1">
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Product *</label>
+                      <select className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-gray-100"
+                        {...register(`items.${i}.productId`, { required: true, onChange: (e) => onProductSelect(i, e.target.value) })}>
+                        <option value="">— Select product —</option>
+                        {products.map(p => <option key={p._id || p.id} value={p._id || p.id}>{p.name} (Stock: {p.stock})</option>)}
+                      </select>
+                    </div>
+                    {fields.length > 1 && <button type="button" onClick={() => remove(i)} className="text-red-400 flex-shrink-0 mb-2"><MinusCircle size={18} /></button>}
                   </div>
-                  <div className="grid grid-cols-4 gap-2 text-xs">
-                    <Input type="number" step="0.01" placeholder="Qty" {...register(`items.${i}.qty`, { valueAsNumber: true })} />
-                    <Input type="number" step="0.01" placeholder="Price" {...register(`items.${i}.sellingPrice`, { valueAsNumber: true })} />
-                    <Input type="number" step="0.01" placeholder="Tax%" {...register(`items.${i}.taxPercent`, { valueAsNumber: true })} />
-                    <div className="flex items-end pb-0.5 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      {sym}{((Number(watchItems[i]?.qty)||0)*(Number(watchItems[i]?.sellingPrice)||0)*(1+(Number(watchItems[i]?.taxPercent)||0)/100)).toFixed(2)}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    <Input label="Qty" type="number" step="1" min="1" {...register(`items.${i}.qty`, { valueAsNumber: true, min: 1 })} />
+                    <Input label="Unit Price" type="number" step="0.01" {...register(`items.${i}.sellingPrice`, { valueAsNumber: true })} />
+                    <Input label="Tax %" type="number" step="0.01" {...register(`items.${i}.taxPercent`, { valueAsNumber: true })} />
+                    <div className="flex flex-col">
+                      <span className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Line Total</span>
+                      <div className="flex items-center h-9 px-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm font-semibold text-primary-600 dark:text-primary-400">
+                        {sym}{((Number(watchItems[i]?.qty)||0)*(Number(watchItems[i]?.sellingPrice)||0)*(1+(Number(watchItems[i]?.taxPercent)||0)/100)).toFixed(2)}
+                      </div>
                     </div>
                   </div>
                 </div>

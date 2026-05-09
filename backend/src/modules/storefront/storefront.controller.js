@@ -122,11 +122,18 @@ export const validateCoupon = asyncHandler(async (req, res) => {
 // ── Products ──────────────────────────────────────────────────────────────────
 export const listProducts = asyncHandler(async (req, res) => {
   const org = await resolveOrg(req.params.slug);
-  const { search, categoryId, page = 1, limit = 24 } = req.query;
+  const { search, categoryId, brand, minPrice, maxPrice, inStock, page = 1, limit = 24 } = req.query;
 
-  const filter = { organizationId: org._id, isActive: true, stock: { $gt: 0 } };
+  const filter = { organizationId: org._id, isActive: true };
+  if (inStock !== "false") filter.stock = { $gt: 0 };
   if (search) filter.name = { $regex: search, $options: "i" };
   if (categoryId) filter.categoryId = categoryId;
+  if (brand) filter.attributes = { $elemMatch: { key: "brand", value: { $regex: `^${brand}$`, $options: "i" } } };
+  if (minPrice || maxPrice) {
+    filter.sellingPrice = {};
+    if (minPrice) filter.sellingPrice.$gte = Number(minPrice);
+    if (maxPrice) filter.sellingPrice.$lte = Number(maxPrice);
+  }
 
   const skip = (Number(page) - 1) * Number(limit);
   const [products, total] = await Promise.all([
@@ -143,6 +150,29 @@ export const listProducts = asyncHandler(async (req, res) => {
   return ApiResponse.paginated(res, "Products", {
     docs: products, totalDocs: total, limit: Number(limit),
     page: Number(page), totalPages: Math.ceil(total / Number(limit)),
+  });
+});
+
+export const getFilterOptions = asyncHandler(async (req, res) => {
+  const org = await resolveOrg(req.params.slug);
+  const products = await Product.find({ organizationId: org._id, isActive: true })
+    .select("attributes sellingPrice")
+    .lean();
+
+  const brandSet = new Set();
+  for (const p of products) {
+    const b = p.attributes?.find(a => a.key === "brand");
+    if (b?.value) brandSet.add(b.value);
+  }
+
+  const prices = products.map(p => p.sellingPrice).filter(n => n > 0);
+
+  return ApiResponse.success(res, "Filter options", {
+    brands: [...brandSet].sort(),
+    priceRange: {
+      min: prices.length ? Math.floor(Math.min(...prices)) : 0,
+      max: prices.length ? Math.ceil(Math.max(...prices)) : 10000,
+    },
   });
 });
 

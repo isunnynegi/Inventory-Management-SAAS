@@ -50,6 +50,7 @@ export const storeApi = (slug) => {
     listProducts: (p) => sfApi.get(`/store/${slug}/products`, { params: p, ...withSlug({}) }).then(r),
     getProduct: (id) => sfApi.get(`/store/${slug}/products/${id}`, withSlug({})).then(r),
     listCategories: () => sfApi.get(`/store/${slug}/categories`, withSlug({})).then(r),
+    filterOptions: () => sfApi.get(`/store/${slug}/filter-options`, withSlug({})).then(r),
     validateCoupon: (code, subtotal) => sfApi.get(`/store/${slug}/coupons/validate`, { params: { code, subtotal }, ...withSlug({}) }).then(r),
     register: (d) => sfApi.post(`/store/${slug}/auth/register`, d, withSlug({})).then(r),
     login: (d) => sfApi.post(`/store/${slug}/auth/login`, d, withSlug({})).then(r),

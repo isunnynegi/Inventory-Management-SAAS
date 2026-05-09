@@ -28,6 +28,7 @@ router.get("/coupons/validate", ctrl.validateCoupon);
 router.get("/products", ctrl.listProducts);
 router.get("/products/:productId", ctrl.getProduct);
 router.get("/categories", ctrl.listCategories);
+router.get("/filter-options", ctrl.getFilterOptions);
 
 // Auth
 router.post("/auth/register", sfAuthLimiter, ctrl.customerRegister);

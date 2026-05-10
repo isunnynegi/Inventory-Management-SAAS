@@ -86,7 +86,7 @@ export default function SalesPage() {
     { header: "", cellClassName: "text-right", render: r => (
       <div className="flex justify-end gap-1">
         <Button variant="ghost" size="sm" onClick={() => setViewModal(r)}><Eye size={13} /></Button>
-        {!r.invoiceId && <Button variant="ghost" size="sm" onClick={() => generateInvoice(r.id)} title="Generate Invoice"><FileText size={13} /></Button>}
+        {!r.invoiceId && <Button variant="ghost" size="sm" onClick={() => generateInvoice(r._id || r.id)} title="Generate Invoice"><FileText size={13} /></Button>}
       </div>
     )},
   ];
@@ -210,7 +210,7 @@ export default function SalesPage() {
             <div className="text-right font-bold text-base">Grand Total: {sym}{viewModal.totalAmount?.toFixed(2)}</div>
             {!viewModal.invoiceId && (
               <div className="flex justify-end">
-                <Button variant="secondary" onClick={() => { generateInvoice(viewModal.id); setViewModal(null); }}><FileText size={14} /> Generate Invoice</Button>
+                <Button variant="secondary" onClick={() => { generateInvoice(viewModal._id || viewModal.id); setViewModal(null); }}><FileText size={14} /> Generate Invoice</Button>
               </div>
             )}
           </div>

@@ -39,6 +39,7 @@ export default function SuppliersPage() {
   const columns = [
     { header: "Name", render: r => <span className="font-medium text-gray-900">{r.name}</span> },
     { header: "Phone", render: r => r.phone || "—" }, { header: "Email", render: r => r.email || "—" },
+    { header: "GSTIN", render: r => r.gstin ? <span className="font-mono text-xs">{r.gstin}</span> : "—" },
     { header: "Added", render: r => new Date(r.createdAt).toLocaleDateString("en-IN") },
     { header: "", cellClassName: "text-right", render: r => isAdmin() ? (
       <div className="flex justify-end gap-2">
@@ -77,6 +78,7 @@ export default function SuppliersPage() {
           <Input label="Name *" error={errors.name?.message} {...register("name", { required: "Required" })} />
           <Input label="Phone" {...register("phone")} />
           <Input label="Email" type="email" {...register("email")} />
+          <Input label="GSTIN" placeholder="22AAAAA0000A1Z5" {...register("gstin")} />
           <Input label="Address" {...register("address")} />
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="secondary" onClick={() => setModal(null)}>Cancel</Button>

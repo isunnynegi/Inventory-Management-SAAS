@@ -7,6 +7,7 @@ import { Plus, Eye, Trash2, Search, PlusCircle, MinusCircle } from "lucide-react
 import toast from "react-hot-toast";
 import { format } from "date-fns";
 import { useAuthStore } from "../../stores/authStore.js";
+import AddProductDrawer from "../../components/inventory/AddProductDrawer.jsx";
 
 const payBadge = { paid: "green", partial: "yellow", unpaid: "red" };
 
@@ -18,6 +19,7 @@ export default function PurchasesPage() {
   const [modal, setModal] = useState(false);
   const [viewModal, setViewModal] = useState(null);
   const [search, setSearch] = useState("");
+  const [addProductOpen, setAddProductOpen] = useState(false);
 
   const { register, handleSubmit, reset, watch, control, setValue, formState: { errors } } = useForm({
     mode: "onChange",
@@ -112,7 +114,10 @@ export default function PurchasesPage() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Items *</p>
-              <button type="button" onClick={() => append({ productId: "", qty: 1, costPrice: 0, taxPercent: 0 })} className="text-primary-600 text-xs flex items-center gap-1 hover:underline"><PlusCircle size={13} /> Add item</button>
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={() => setAddProductOpen(true)} className="text-emerald-600 text-xs flex items-center gap-1 hover:underline"><Plus size={13} /> New product</button>
+                <button type="button" onClick={() => append({ productId: "", qty: 1, costPrice: 0, taxPercent: 0 })} className="text-primary-600 text-xs flex items-center gap-1 hover:underline"><PlusCircle size={13} /> Add item</button>
+              </div>
             </div>
             <div className="space-y-3">
               {fields.map((f, i) => (
@@ -177,6 +182,11 @@ export default function PurchasesPage() {
           </div>
         </form>
       </Modal>
+
+      <AddProductDrawer
+        open={addProductOpen}
+        onClose={() => { setAddProductOpen(false); qc.invalidateQueries(["products-all"]); }}
+      />
 
       {/* View Modal */}
       {viewModal && (

@@ -10,11 +10,13 @@ export const useAuthStore = create(devtools((set, get) => ({
   impersonatedOrgName: null,
   setAuth: ({ user, organization, accessToken }) => {
     window.__accessToken = accessToken;
+    if (accessToken) sessionStorage.setItem("_sk_at", accessToken);
     set({ user, organization, isAuthenticated: true, isLoading: false }, false, "setAuth");
   },
   clearAuth: () => {
     window.__accessToken = null;
     window.__originalToken = null;
+    sessionStorage.removeItem("_sk_at");
     set({ user: null, organization: null, isAuthenticated: false, isLoading: false, impersonating: false, impersonatedOrgName: null }, false, "clearAuth");
   },
   setLoading: v => set({ isLoading: v }),

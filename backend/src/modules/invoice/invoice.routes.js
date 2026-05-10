@@ -88,7 +88,184 @@ export const updateStatus = asyncHandler(async (req, res) => {
   return ApiResponse.ok(res, "Invoice updated", doc);
 });
 
-// ── PDF Generation ─────────────────────────────────────────────────────────────
+// ── Shared invoice renderer (used by both PDF download and HTML view) ───────────
+function buildPDF(doc, invoice, org) {
+  const C = {
+    primary:  "#4F46E5", primaryDark: "#3730A3", primaryLight: "#EEF2FF",
+    dark:  "#111827", mid: "#374151", gray: "#6B7280",
+    light: "#F9FAFB", border: "#E5E7EB", white: "#FFFFFF",
+    green: "#10B981", red: "#EF4444", amber: "#F59E0B",
+  };
+  const sym   = org.currencySymbol || "₹";
+  const PW    = 595;   // A4 width
+  const M     = 40;    // margin
+  const W     = PW - M * 2; // 515
+  const MID   = M + Math.floor(W / 2);
+  const HALF  = Math.floor(W / 2);
+  const ROW_H = 18;
+
+  const fmt = (d) => new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  const money = (n) => `${sym}${(Number(n) || 0).toFixed(2)}`;
+
+  // ── Top accent bar ────────────────────────────────────────
+  doc.rect(0, 0, PW, 5).fill(C.primary);
+
+  // ── Header: store name (left) | TAX INVOICE + meta (right) ───
+  let y = 18;
+  doc.fillColor(C.primary).fontSize(18).font("Helvetica-Bold")
+     .text(org.storeName || org.name || "Business", M, y, { width: HALF - 10, lineBreak: false });
+
+  doc.fillColor(C.dark).fontSize(11).font("Helvetica-Bold")
+     .text("TAX INVOICE", MID + 10, y, { width: HALF - 10, align: "right", lineBreak: false });
+
+  y += 22;
+
+  // Org sub-info (left)
+  doc.fillColor(C.gray).fontSize(7.5).font("Helvetica");
+  const addrParts = [org.address?.street, org.address?.city, org.address?.state, org.address?.zip].filter(Boolean);
+  if (addrParts.length) { doc.text(addrParts.join(", "), M, y, { width: HALF - 10, lineBreak: false }); y += 11; }
+  if (org.phone)  { doc.text(`Ph: ${org.phone}`,    M, y, { lineBreak: false }); y += 11; }
+  if (org.email)  { doc.text(`Email: ${org.email}`, M, y, { lineBreak: false }); y += 11; }
+  if (org.gstin)  { doc.text(`GSTIN: ${org.gstin}`, M, y, { lineBreak: false }); y += 11; }
+
+  // Invoice meta (right column, aligned with store sub-info)
+  const metaStartY = 40;
+  const lX = MID + 10, vX = MID + 80;
+  const metaRow = (label, value, ry) => {
+    doc.fillColor(C.gray).fontSize(7.5).font("Helvetica-Bold").text(label, lX, ry, { width: 65, lineBreak: false });
+    doc.fillColor(C.dark).font("Helvetica").text(value, vX, ry, { width: HALF - 50, lineBreak: false });
+  };
+  metaRow("Invoice No :", invoice.invoiceNumber, metaStartY);
+  metaRow("Date       :", fmt(invoice.date), metaStartY + 12);
+  metaRow("Due Date   :", invoice.dueDate ? fmt(invoice.dueDate) : "On Receipt", metaStartY + 24);
+  metaRow("Pay Method :", invoice.paymentMethod
+    ? invoice.paymentMethod.charAt(0).toUpperCase() + invoice.paymentMethod.slice(1)
+    : "—", metaStartY + 36);
+
+  y = Math.max(y, metaStartY + 52) + 6;
+
+  // ── Primary divider ───────────────────────────────────────
+  doc.rect(M, y, W, 2).fill(C.primary);
+  y += 10;
+
+  // ── Info box: Bill To (left) | Payment Details (right) ───
+  const BOX_H = 82;
+  doc.rect(M, y, W, BOX_H).fill(C.light);
+  doc.rect(M, y, W, BOX_H).lineWidth(0.5).stroke(C.border);
+
+  // Bill To
+  doc.fillColor(C.primary).fontSize(7).font("Helvetica-Bold")
+     .text("BILL TO", M + 8, y + 7, { lineBreak: false });
+  doc.fillColor(C.dark).fontSize(9).font("Helvetica-Bold")
+     .text(invoice.customerName || "Walk-in Customer", M + 8, y + 17, { width: HALF - 18, lineBreak: false });
+  doc.fillColor(C.mid).fontSize(7.5).font("Helvetica");
+  let cy = y + 30;
+  if (invoice.customerPhone)   { doc.text(`Ph: ${invoice.customerPhone}`,    M + 8, cy, { width: HALF - 18, lineBreak: false }); cy += 11; }
+  if (invoice.customerAddress) { doc.text(invoice.customerAddress,            M + 8, cy, { width: HALF - 18, lineBreak: false }); cy += 11; }
+
+  // Vertical separator
+  doc.moveTo(MID, y + 8).lineTo(MID, y + BOX_H - 8).lineWidth(0.5).strokeColor(C.border).stroke();
+
+  // Payment Details (right)
+  doc.fillColor(C.primary).fontSize(7).font("Helvetica-Bold")
+     .text("PAYMENT DETAILS", MID + 10, y + 7, { lineBreak: false });
+
+  const pLX = MID + 10, pVX = MID + 75;
+  let py = y + 19;
+  const pRow = (lbl, val) => {
+    doc.fillColor(C.gray).fontSize(7.5).font("Helvetica-Bold").text(lbl, pLX, py, { width: 60, lineBreak: false });
+    doc.fillColor(C.dark).font("Helvetica").text(val, pVX, py, { width: HALF - 45, lineBreak: false });
+    py += 12;
+  };
+  pRow("Paid :", money(invoice.amountPaid));
+  pRow("Balance :", money(Math.max(0, invoice.grandTotal - (invoice.amountPaid || 0))));
+
+  // Status badge
+  const stC = { paid: C.green, unpaid: C.red, partial: C.amber, cancelled: C.gray };
+  doc.rect(pLX, py + 2, 48, 14).fill(stC[invoice.status] || C.gray);
+  doc.fillColor(C.white).fontSize(7).font("Helvetica-Bold")
+     .text((invoice.status || "UNPAID").toUpperCase(), pLX, py + 5.5, { width: 48, align: "center", lineBreak: false });
+
+  y += BOX_H + 12;
+
+  // ── Items table ───────────────────────────────────────────
+  // Column x positions (right-edge of each cell for right-aligned values)
+  const cSno   = M;          // 40
+  const cItem  = M + 20;     // 60
+  const cQty   = M + 300;    // 340
+  const cRate  = M + 355;    // 395
+  const cTaxP  = M + 405;    // 445
+  const cTaxA  = M + 445;    // 485
+  const cTotal = M + 515;    // 555 (right edge)
+
+  // Header row
+  doc.rect(M, y, W, ROW_H).fill(C.primary);
+  doc.fillColor(C.white).fontSize(7.5).font("Helvetica-Bold");
+  doc.text("#",            cSno,  y + 5.5, { width: 18, align: "center", lineBreak: false });
+  doc.text("Item Description", cItem, y + 5.5, { width: 275, lineBreak: false });
+  doc.text("Qty",          cQty,  y + 5.5, { width: 50, align: "right", lineBreak: false });
+  doc.text(`Rate(${sym})`, cRate, y + 5.5, { width: 45, align: "right", lineBreak: false });
+  doc.text("Tax%",         cTaxP, y + 5.5, { width: 35, align: "right", lineBreak: false });
+  doc.text(`Tax(${sym})`,  cTaxA, y + 5.5, { width: 40, align: "right", lineBreak: false });
+  doc.text(`Total(${sym})`,cTotal - 35, y + 5.5, { width: 35, align: "right", lineBreak: false });
+  y += ROW_H;
+
+  // Item rows
+  doc.fontSize(8).font("Helvetica");
+  invoice.items.forEach((item, i) => {
+    doc.rect(M, y, W, ROW_H).fill(i % 2 === 0 ? C.white : C.light);
+    doc.fillColor(C.dark);
+    doc.text(String(i + 1),                   cSno,  y + 5, { width: 18, align: "center", lineBreak: false });
+    const label = `${item.name}${item.unit ? ` (${item.unit})` : ""}`;
+    doc.text(label.substring(0, 46),           cItem, y + 5, { width: 275, lineBreak: false });
+    doc.text(String(item.qty),                 cQty,  y + 5, { width: 50, align: "right", lineBreak: false });
+    doc.text(`${(item.price||0).toFixed(2)}`,  cRate, y + 5, { width: 45, align: "right", lineBreak: false });
+    doc.text(`${item.taxPercent || 0}%`,       cTaxP, y + 5, { width: 35, align: "right", lineBreak: false });
+    doc.text(`${(item.taxAmount||0).toFixed(2)}`, cTaxA, y + 5, { width: 40, align: "right", lineBreak: false });
+    doc.text(`${item.lineTotal.toFixed(2)}`,   cTotal - 35, y + 5, { width: 35, align: "right", lineBreak: false });
+    y += ROW_H;
+  });
+
+  // Table bottom border
+  doc.moveTo(M, y).lineTo(M + W, y).lineWidth(0.5).strokeColor(C.border).stroke();
+  y += 12;
+
+  // ── Totals ────────────────────────────────────────────────
+  const tW    = 210;
+  const tX    = M + W - tW;
+  const tLblX = tX;
+  const tValX = tX + 120;
+  const tValW = tW - 122;
+
+  const totRow = (label, value, isBold = false) => {
+    doc.fillColor(C.gray).fontSize(8).font(isBold ? "Helvetica-Bold" : "Helvetica")
+       .text(label, tLblX, y, { width: 116, align: "right", lineBreak: false });
+    doc.fillColor(isBold ? C.dark : C.mid).font(isBold ? "Helvetica-Bold" : "Helvetica")
+       .text(money(value), tValX, y, { width: tValW, align: "right", lineBreak: false });
+    y += 13;
+  };
+  totRow("Subtotal",    invoice.subtotal || 0);
+  if (invoice.discount > 0) totRow("Discount",  invoice.discount);
+  if (invoice.taxTotal > 0) totRow("Tax (GST)", invoice.taxTotal);
+
+  // Grand total band
+  doc.rect(tX - 8, y, tW + 8, 22).fill(C.primary);
+  doc.fillColor(C.white).fontSize(9.5).font("Helvetica-Bold");
+  doc.text("Grand Total", tLblX - 8, y + 6, { width: 116 + 8, align: "right", lineBreak: false });
+  doc.text(money(invoice.grandTotal), tValX, y + 6, { width: tValW, align: "right", lineBreak: false });
+  y += 30;
+
+  // ── Footer ───────────────────────────────────────────────
+  const footY = 800;
+  doc.moveTo(M, footY).lineTo(M + W, footY).lineWidth(0.5).strokeColor(C.border).stroke();
+  doc.fillColor(C.gray).fontSize(7.5).font("Helvetica");
+  const note = invoice.notes ? `Note: ${invoice.notes}` : "Thank you for your business!";
+  doc.text(note, M, footY + 8, { width: W / 2, lineBreak: false });
+  if (invoice.terms) doc.text(`Terms & Conditions: ${invoice.terms}`, M, footY + 20, { width: W });
+  doc.fillColor(C.gray).text("This is a computer generated invoice.", M + W / 2, footY + 8, { width: W / 2, align: "right", lineBreak: false });
+}
+
+// ── PDF Download ──────────────────────────────────────────────────────────────
 export const downloadPDF = asyncHandler(async (req, res) => {
   const invoice = await Invoice.findOne({ _id: req.params.id, organizationId: req.organizationId }).lean();
   if (!invoice) throw ApiError.notFound("Invoice not found");
@@ -97,103 +274,24 @@ export const downloadPDF = asyncHandler(async (req, res) => {
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader("Content-Disposition", `attachment; filename="${invoice.invoiceNumber}.pdf"`);
 
-  const doc = new PDFDocument({ margin: 40, size: "A4" });
+  const doc = new PDFDocument({ margin: 40, size: "A4", info: { Title: invoice.invoiceNumber, Author: org.name } });
   doc.pipe(res);
+  buildPDF(doc, invoice, org);
+  doc.end();
+});
 
-  const colors = { primary: "#4F46E5", dark: "#1F2937", gray: "#6B7280", light: "#F9FAFB", border: "#E5E7EB" };
-  const W = 515;
+// ── PDF inline view (for browser preview) ────────────────────────────────────
+export const viewPDF = asyncHandler(async (req, res) => {
+  const invoice = await Invoice.findOne({ _id: req.params.id, organizationId: req.organizationId }).lean();
+  if (!invoice) throw ApiError.notFound("Invoice not found");
+  const org = await Organization.findById(req.organizationId).lean();
 
-  // ── Header ──────────────────────────────────────────────────────────────────
-  doc.rect(0, 0, 595, 100).fill(colors.primary);
-  doc.fillColor("white").fontSize(22).font("Helvetica-Bold").text(org.name || "Business Name", 40, 25);
-  doc.fontSize(9).font("Helvetica");
-  if (org.address?.street) doc.text(org.address.street, 40, 52);
-  const cityLine = [org.address?.city, org.address?.state, org.address?.zip].filter(Boolean).join(", ");
-  if (cityLine) doc.text(cityLine, 40, 64);
-  if (org.phone) doc.text(`Ph: ${org.phone}`, 40, 76);
-  if (org.gstin) doc.text(`GSTIN: ${org.gstin}`, 300, 52);
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `inline; filename="${invoice.invoiceNumber}.pdf"`);
 
-  // TAX INVOICE label
-  doc.fillColor("white").fontSize(16).font("Helvetica-Bold").text("TAX INVOICE", 380, 30, { width: 175, align: "right" });
-
-  // ── Invoice Meta ─────────────────────────────────────────────────────────────
-  doc.rect(40, 115, W, 60).fill(colors.light).stroke(colors.border);
-  doc.fillColor(colors.dark).fontSize(9).font("Helvetica-Bold");
-  doc.text("Invoice No:", 50, 125).text("Date:", 50, 140).text("Due Date:", 50, 155);
-  doc.font("Helvetica");
-  doc.text(invoice.invoiceNumber, 130, 125);
-  doc.text(new Date(invoice.date).toLocaleDateString("en-IN"), 130, 140);
-  doc.text(invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString("en-IN") : "On Receipt", 130, 155);
-
-  // Customer block
-  doc.font("Helvetica-Bold").text("Bill To:", 300, 125);
-  doc.font("Helvetica").text(invoice.customerName || "Walk-in Customer", 300, 140);
-  if (invoice.customerPhone) doc.text(`Ph: ${invoice.customerPhone}`, 300, 155);
-
-  // ── Items Table ───────────────────────────────────────────────────────────────
-  const tableY = 195;
-  const cols = { sno: 40, item: 65, qty: 320, rate: 360, tax: 415, total: 460 };
-
-  // Table header
-  doc.rect(40, tableY, W, 20).fill(colors.primary);
-  doc.fillColor("white").fontSize(8).font("Helvetica-Bold");
-  doc.text("#", cols.sno, tableY + 6);
-  doc.text("Item", cols.item, tableY + 6);
-  doc.text("Qty", cols.qty, tableY + 6);
-  doc.text("Rate", cols.rate, tableY + 6);
-  doc.text("Tax%", cols.tax, tableY + 6);
-  doc.text("Total", cols.total, tableY + 6);
-
-  let y = tableY + 25;
-  doc.fillColor(colors.dark).font("Helvetica").fontSize(8);
-  invoice.items.forEach((item, i) => {
-    const bg = i % 2 === 0 ? "white" : colors.light;
-    doc.rect(40, y - 3, W, 18).fill(bg);
-    doc.fillColor(colors.dark);
-    doc.text(String(i + 1), cols.sno, y);
-    doc.text(item.name.substring(0, 38), cols.item, y, { width: 240 });
-    doc.text(`${item.qty} ${item.unit || ""}`, cols.qty, y);
-    doc.text(`${org.currencySymbol || "₹"}${item.price.toFixed(2)}`, cols.rate, y);
-    doc.text(`${item.taxPercent || 0}%`, cols.tax, y);
-    doc.text(`${org.currencySymbol || "₹"}${item.lineTotal.toFixed(2)}`, cols.total, y);
-    y += 18;
-  });
-
-  // ── Totals ────────────────────────────────────────────────────────────────────
-  y += 10;
-  doc.moveTo(40, y).lineTo(555, y).strokeColor(colors.border).stroke();
-  y += 10;
-  const sym = org.currencySymbol || "₹";
-  const totalsX = 360;
-  const row = (label, value, bold = false) => {
-    doc.font(bold ? "Helvetica-Bold" : "Helvetica").fontSize(9);
-    doc.fillColor(colors.gray).text(label, totalsX, y, { width: 90, align: "right" });
-    doc.fillColor(colors.dark).text(`${sym}${value.toFixed(2)}`, 460, y, { width: 95, align: "right" });
-    y += 16;
-  };
-  row("Subtotal:", invoice.subtotal || 0);
-  if (invoice.discount) row("Discount:", invoice.discount);
-  if (invoice.taxTotal) row("Tax:", invoice.taxTotal);
-  y += 2;
-  doc.rect(350, y - 2, W - 310, 22).fill(colors.primary);
-  doc.fillColor("white").font("Helvetica-Bold").fontSize(10);
-  doc.text("Grand Total:", totalsX, y + 4, { width: 90, align: "right" });
-  doc.text(`${sym}${invoice.grandTotal.toFixed(2)}`, 460, y + 4, { width: 95, align: "right" });
-  y += 30;
-
-  // Payment status badge
-  const statusColors = { paid: "#10B981", unpaid: "#EF4444", partial: "#F59E0B", cancelled: "#6B7280" };
-  const sc = statusColors[invoice.status] || "#6B7280";
-  doc.rect(40, y, 80, 18).fill(sc);
-  doc.fillColor("white").fontSize(9).font("Helvetica-Bold").text(invoice.status.toUpperCase(), 40, y + 5, { width: 80, align: "center" });
-
-  // ── Footer ────────────────────────────────────────────────────────────────────
-  const footerY = 750;
-  doc.moveTo(40, footerY).lineTo(555, footerY).strokeColor(colors.border).stroke();
-  doc.fillColor(colors.gray).fontSize(8).font("Helvetica");
-  doc.text(invoice.notes || "Thank you for your business!", 40, footerY + 8, { align: "center", width: W });
-  if (invoice.terms) doc.text(`Terms: ${invoice.terms}`, 40, footerY + 20, { align: "center", width: W });
-
+  const doc = new PDFDocument({ margin: 40, size: "A4", info: { Title: invoice.invoiceNumber, Author: org.name } });
+  doc.pipe(res);
+  buildPDF(doc, invoice, org);
   doc.end();
 });
 
@@ -205,4 +303,5 @@ router.get("/",                   list);
 router.get("/:id",                getOne);
 router.patch("/:id/status",       authorize("admin","superAdmin"), updateStatus);
 router.get("/:id/pdf",            downloadPDF);
+router.get("/:id/pdf/view",       viewPDF);
 export default router;

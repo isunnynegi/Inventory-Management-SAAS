@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useOutletContext, Navigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Package, MapPin, Clock, User, Plus, Star, Trash2,
-  X, Check, ChevronRight, Home, Briefcase,
+  Package, MapPin, User, Plus, Star, Trash2,
+  X, Check, Home, Briefcase, FileText,
 } from "lucide-react";
 import { useCustomerStore } from "../../stores/storefrontStore.js";
 import { format } from "date-fns";
@@ -98,6 +98,22 @@ export default function CustomerAccountPage() {
   const currencySymbol = store?.currencySymbol || "₹";
   const [tab, setTab] = useState("orders");
   const [addAddrOpen, setAddAddrOpen] = useState(false);
+  const [invoiceLoading, setInvoiceLoading] = useState(null);
+
+  const openOrderReceipt = async (orderId) => {
+    setInvoiceLoading(orderId);
+    try {
+      const res = await api.getOrderInvoicePdf(orderId);
+      const blob = new Blob([res.data], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+    } catch {
+      toast.error("Could not load receipt");
+    } finally {
+      setInvoiceLoading(null);
+    }
+  };
 
   if (!isAuthenticated) return <Navigate to={`/store/${slug}/login?next=/store/${slug}/account`} replace />;
 
@@ -223,9 +239,22 @@ export default function CustomerAccountPage() {
                         {order.paymentMethod} · {order.paymentStatus}
                       </span>
                     </div>
-                    <p className="font-bold text-gray-900 text-sm">
-                      {currencySymbol}{order.totalAmount.toFixed(2)}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => openOrderReceipt(order._id)}
+                        disabled={invoiceLoading === order._id}
+                        title="View Receipt"
+                        className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        {invoiceLoading === order._id
+                          ? <span className="w-3 h-3 border-2 border-primary-400/30 border-t-primary-600 rounded-full animate-spin" />
+                          : <FileText size={12} />}
+                        Receipt
+                      </button>
+                      <p className="font-bold text-gray-900 text-sm">
+                        {currencySymbol}{order.totalAmount.toFixed(2)}
+                      </p>
+                    </div>
                   </div>
                 </div>
               ))}

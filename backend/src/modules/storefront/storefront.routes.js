@@ -45,6 +45,7 @@ router.delete("/auth/me/addresses/:addressId", authenticateCustomer, ctrl.remove
 router.post("/orders", authenticateCustomer, sfOrderLimiter, ctrl.createOrder);
 router.get("/orders", authenticateCustomer, ctrl.getCustomerOrders);
 router.get("/orders/:orderId", authenticateCustomer, ctrl.getCustomerOrder);
+router.get("/orders/:orderId/invoice/pdf", authenticateCustomer, ctrl.getOrderInvoicePdf);
 
 // Payment
 router.post("/payment/juspay/initiate", authenticateCustomer, ctrl.initiateJuspayPayment);

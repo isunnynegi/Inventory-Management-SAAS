@@ -171,20 +171,29 @@ export default function CheckoutPage() {
           {customer?.addresses?.length > 0 && (
             <div className="mb-3 space-y-2">
               {customer.addresses.map((a, idx) => (
-                <button key={idx} onClick={() => { setSavedAddrIdx(idx); setAddress(a); }}
-                  className={`w-full text-left p-3 rounded-lg border-2 transition-colors ${savedAddrIdx === idx ? "border-primary-500 bg-primary-50" : "border-gray-200"}`}>
-                  <p className="text-sm font-medium">{a.label || "Home"} — {a.name}</p>
-                  <p className="text-xs text-gray-500">{a.street}, {a.city}, {a.state} {a.zip}</p>
-                </button>
+                <label key={idx} onClick={() => { setSavedAddrIdx(idx); setAddress(a); }}
+                  className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors ${savedAddrIdx === idx ? "border-primary-500 bg-primary-50" : "border-gray-200 hover:border-gray-300"}`}>
+                  <div className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${savedAddrIdx === idx ? "border-primary-600" : "border-gray-300"}`}>
+                    {savedAddrIdx === idx && <div className="w-2 h-2 rounded-full bg-primary-600" />}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">{a.label || "Home"} — {a.name}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{a.street}, {a.city}, {a.state} {a.zip}</p>
+                    {a.phone && <p className="text-xs text-gray-400 mt-0.5">{a.phone}</p>}
+                  </div>
+                </label>
               ))}
-              <button onClick={() => { setSavedAddrIdx(null); setAddress({}); }}
-                className={`w-full text-left p-3 rounded-lg border-2 text-sm text-primary-600 transition-colors ${savedAddrIdx === null && Object.keys(address).length === 0 ? "border-primary-500 bg-primary-50" : "border-dashed border-gray-200"}`}>
-                + Use a different address
-              </button>
+              <label onClick={() => { setSavedAddrIdx(null); setAddress({}); }}
+                className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors ${savedAddrIdx === null ? "border-primary-500 bg-primary-50" : "border-dashed border-gray-200 hover:border-gray-300"}`}>
+                <div className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${savedAddrIdx === null ? "border-primary-600" : "border-gray-300"}`}>
+                  {savedAddrIdx === null && <div className="w-2 h-2 rounded-full bg-primary-600" />}
+                </div>
+                <span className="text-sm text-primary-600 font-medium">Use a different address</span>
+              </label>
             </div>
           )}
 
-          {(savedAddrIdx === null || customer?.addresses?.length === 0) && (
+          {(savedAddrIdx === null || !customer?.addresses?.length) && (
             <AddressForm value={address} onChange={setAddress} />
           )}
         </div>

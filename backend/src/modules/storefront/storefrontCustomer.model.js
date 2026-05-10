@@ -13,7 +13,8 @@ const addressSchema = new mongoose.Schema({
 }, { _id: true });
 
 const storefrontCustomerSchema = new mongoose.Schema({
-  organizationId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
+  // Optional: records which store the customer first registered at (informational only)
+  organizationId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
   name: { type: String, required: true, trim: true, maxlength: 100 },
   email: { type: String, required: true, trim: true, lowercase: true },
   phone: { type: String, trim: true },
@@ -27,7 +28,9 @@ const storefrontCustomerSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true },
 }, { timestamps: true });
 
-storefrontCustomerSchema.index({ organizationId: 1, email: 1 }, { unique: true });
+// Global email uniqueness — customers can log in from any store
+// MIGRATION: run db.storefrontcustomers.dropIndex({organizationId:1,email:1}) on existing data
+storefrontCustomerSchema.index({ email: 1 }, { unique: true });
 
 storefrontCustomerSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();

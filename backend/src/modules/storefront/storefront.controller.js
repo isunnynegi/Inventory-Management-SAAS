@@ -1,21 +1,24 @@
 import jwt from "jsonwebtoken";
+import PDFDocument from "pdfkit";
 import Organization from "../organization/organization.model.js";
 import Product from "../product/product.model.js";
 import Category from "../category/category.model.js";
 import StorefrontCustomer from "./storefrontCustomer.model.js";
 import StorefrontOrder from "../storefrontOrder/storefrontOrder.model.js";
+import Invoice from "../invoice/invoice.model.js";
 import Coupon from "../coupon/coupon.model.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { createJuspayOrder } from "../../utils/juspay.js";
+import { genInvoiceNumber, buildPDF } from "../../utils/invoicePdf.js";
 import logger from "../../utils/logger.js";
 
 const CUSTOMER_JWT_SECRET = process.env.CUSTOMER_JWT_SECRET || process.env.JWT_SECRET;
 const CUSTOMER_REFRESH_SECRET = process.env.CUSTOMER_REFRESH_SECRET || process.env.JWT_REFRESH_SECRET;
 
-function signCustomerToken(customerId, orgId) {
-  return jwt.sign({ sub: customerId, organizationId: orgId, type: "storefront_customer" }, CUSTOMER_JWT_SECRET, { expiresIn: "7d" });
+function signCustomerToken(customerId) {
+  return jwt.sign({ sub: customerId, type: "storefront_customer" }, CUSTOMER_JWT_SECRET, { expiresIn: "7d" });
 }
 function signCustomerRefresh(customerId) {
   return jwt.sign({ sub: customerId, type: "storefront_customer" }, CUSTOMER_REFRESH_SECRET, { expiresIn: "30d" });
@@ -200,11 +203,12 @@ export const customerRegister = asyncHandler(async (req, res) => {
   const org = await resolveOrg(req.params.slug);
   const { name, email, password, phone } = req.body;
 
-  const existing = await StorefrontCustomer.findOne({ organizationId: org._id, email });
-  if (existing) throw ApiError.conflict("Email already registered at this store");
+  const existing = await StorefrontCustomer.findOne({ email });
+  if (existing) throw ApiError.conflict("Email already registered");
 
+  // Store organizationId as first-registered store (informational)
   const customer = await StorefrontCustomer.create({ organizationId: org._id, name, email, password, phone });
-  const accessToken = signCustomerToken(customer._id, org._id);
+  const accessToken = signCustomerToken(customer._id);
   const refresh = signCustomerRefresh(customer._id);
   const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   await StorefrontCustomer.findByIdAndUpdate(customer._id, {
@@ -221,16 +225,16 @@ export const customerRegister = asyncHandler(async (req, res) => {
 });
 
 export const customerLogin = asyncHandler(async (req, res) => {
-  const org = await resolveOrg(req.params.slug);
   const { email, password } = req.body;
 
-  const customer = await StorefrontCustomer.findOne({ organizationId: org._id, email }).select("+password");
+  // Global lookup — same account works across all stores
+  const customer = await StorefrontCustomer.findOne({ email }).select("+password");
   if (!customer || !(await customer.comparePassword(password))) {
     throw ApiError.unauthorized("Invalid email or password");
   }
   if (!customer.isActive) throw ApiError.forbidden("Account deactivated");
 
-  const accessToken = signCustomerToken(customer._id, org._id);
+  const accessToken = signCustomerToken(customer._id);
   const refresh = signCustomerRefresh(customer._id);
   const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   await StorefrontCustomer.findByIdAndUpdate(customer._id, {
@@ -277,7 +281,7 @@ export const customerRefresh = asyncHandler(async (req, res) => {
   customer.refreshTokens.push({ token: newRefresh, expiresAt: expires });
   await customer.save({ validateBeforeSave: false });
 
-  const accessToken = signCustomerToken(customer._id, customer.organizationId);
+  const accessToken = signCustomerToken(customer._id);
   res.cookie("sf_refresh", newRefresh, {
     httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", expires,
   });
@@ -449,6 +453,45 @@ export const createOrder = asyncHandler(async (req, res) => {
     await Product.findByIdAndUpdate(item.productId, { $inc: { stock: -item.qty, soldCount: item.qty } });
   }
 
+  // Auto-generate Invoice record (fire & forget — order succeeds even if this fails)
+  (async () => {
+    try {
+      const orgDoc = await Organization.findById(org._id);
+      const invoiceNumber = await genInvoiceNumber(orgDoc);
+      const pmMap = { cash: "cash", upi: "upi", card: "card" };
+      const da = order.deliveryAddress;
+      await Invoice.create({
+        invoiceNumber,
+        storefrontOrderId: order._id,
+        organizationId: org._id,
+        customerName: customer.name,
+        customerPhone: customer.phone,
+        customerAddress: da ? [da.street, da.city, da.state, da.zip].filter(Boolean).join(", ") : undefined,
+        items: orderItems.map(i => ({
+          productId: i.productId,
+          name: i.name,
+          qty: i.qty,
+          price: i.unitPrice,
+          taxPercent: i.taxPercent,
+          taxAmount: i.taxAmount,
+          lineTotal: i.lineTotal,
+        })),
+        subtotal: order.subtotal,
+        discount: order.couponDiscount || 0,
+        deliveryCharge: order.deliveryCharge || 0,
+        taxTotal: order.taxTotal,
+        grandTotal: order.totalAmount,
+        amountPaid: paymentMethod === "cash" ? 0 : 0,
+        status: "unpaid",
+        paymentMethod: pmMap[paymentMethod] || "other",
+        notes: notes || undefined,
+        date: new Date(),
+      });
+    } catch (err) {
+      logger.error("Auto-invoice generation failed for storefront order:", err.message);
+    }
+  })();
+
   return ApiResponse.created(res, "Order placed", order);
 });
 
@@ -569,4 +612,25 @@ export const submitUtr = asyncHandler(async (req, res) => {
   await order.save();
 
   return ApiResponse.ok(res, "UTR submitted. Payment will be verified by the store.");
+});
+
+export const getOrderInvoicePdf = asyncHandler(async (req, res) => {
+  const org = await resolveOrg(req.params.slug);
+  // Verify the order belongs to this customer
+  const order = await StorefrontOrder.findOne({
+    _id: req.params.orderId,
+    customerId: req.storefrontCustomer._id,
+    organizationId: org._id,
+  }).lean();
+  if (!order) throw ApiError.notFound("Order not found");
+
+  const invoice = await Invoice.findOne({ storefrontOrderId: order._id }).lean();
+  if (!invoice) throw ApiError.notFound("Invoice not yet generated for this order");
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `inline; filename="${invoice.invoiceNumber}.pdf"`);
+  const doc = new PDFDocument({ margin: 40, size: "A4", info: { Title: invoice.invoiceNumber } });
+  doc.pipe(res);
+  buildPDF(doc, invoice, org);
+  doc.end();
 });

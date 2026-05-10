@@ -64,7 +64,25 @@ export default function SalesPage() {
       if (!payload.customerId) delete payload.customerId;
       return saleApi.create(payload);
     },
-    onSuccess: () => { qc.invalidateQueries(["sales"]); qc.invalidateQueries(["products"]); toast.success("Sale recorded!"); setModal(false); reset(); },
+    onSuccess: async (res) => {
+      qc.invalidateQueries(["sales"]);
+      qc.invalidateQueries(["products"]);
+      setModal(false);
+      reset();
+      const sale = res?.data;
+      if (sale?.paymentStatus === "paid") {
+        try {
+          await invoiceApi.fromSale(sale.id || sale._id);
+          qc.invalidateQueries(["invoices"]);
+          toast.success("Sale recorded! Invoice auto-generated.");
+        } catch {
+          toast.success("Sale recorded!");
+          toast.error("Invoice generation failed — generate it manually.");
+        }
+      } else {
+        toast.success("Sale recorded!");
+      }
+    },
     onError: (e) => toast.error(e.response?.data?.message || "Error"),
   });
 

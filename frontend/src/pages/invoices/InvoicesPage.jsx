@@ -21,7 +21,7 @@ export default function InvoicesPage() {
 
   const downloadPDF = async (invoice) => {
     try {
-      const res = await invoiceApi.downloadPDF(invoice.id);
+      const res = await invoiceApi.downloadPDF(invoice._id || invoice.id);
       const url = URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
       const a = document.createElement("a");
       a.href = url; a.download = `${invoice.invoiceNumber}.pdf`; a.click();

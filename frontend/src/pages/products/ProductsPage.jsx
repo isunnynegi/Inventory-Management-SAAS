@@ -25,9 +25,9 @@ function fmtINR(n) {
 }
 
 const TONE_PILL = {
-  success: "bg-emerald-50 text-emerald-700",
-  warning: "bg-amber-50 text-amber-700",
-  danger: "bg-red-50 text-red-700",
+  success: "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400",
+  warning: "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400",
+  danger: "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400",
 };
 const TONE_DOT = {
   success: "bg-emerald-500",
@@ -201,7 +201,7 @@ export default function ProductsPage() {
                         <td className="px-4 py-3"><input type="checkbox" className="rounded accent-primary-600" /></td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-lg flex-shrink-0 font-medium text-gray-600">
+                            <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-lg flex-shrink-0 font-medium text-gray-600 dark:text-gray-300">
                               {p.name.charAt(0).toUpperCase()}
                             </div>
                             <div>

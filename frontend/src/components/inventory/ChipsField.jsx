@@ -20,7 +20,7 @@ export default function ChipsField({ field, value = [], onChange }) {
       <label className="field-label">
         {field.label}{field.required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
-      <div className="flex flex-wrap gap-1.5 min-h-[36px] px-2 py-1.5 bg-white border border-gray-200 rounded-lg focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-100 transition">
+      <div className="flex flex-wrap gap-1.5 min-h-[36px] px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-100 transition">
         {value.map(v => (
           <span key={v} className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 bg-primary-50 text-primary-700 rounded text-xs font-medium">
             {v}
@@ -45,7 +45,7 @@ export default function ChipsField({ field, value = [], onChange }) {
           <span className="text-[11px] text-gray-400">Suggested:</span>
           {unusedSuggestions.slice(0, 8).map(s => (
             <button key={s} type="button" onClick={() => add(s)}
-              className="text-[11px] px-1.5 py-0.5 rounded-full border border-gray-200 bg-white text-gray-500 hover:border-primary-300 hover:text-primary-600 transition-colors">
+              className="text-[11px] px-1.5 py-0.5 rounded-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:border-primary-300 hover:text-primary-600 transition-colors">
               + {s}
             </button>
           ))}

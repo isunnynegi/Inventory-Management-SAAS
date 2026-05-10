@@ -110,7 +110,7 @@ function SubcategoryList({ parentId, parentCategory, canEdit }) {
           {subs.map((sub, i) => (
             <div
               key={sub.id || sub._id}
-              className={`flex items-center justify-between px-4 py-2.5 ${i < subs.length - 1 ? "border-b border-gray-100" : ""}`}
+              className={`flex items-center justify-between px-4 py-2.5 ${i < subs.length - 1 ? "border-b border-gray-100 dark:border-gray-700" : ""}`}
             >
               <div className="flex items-center gap-2 min-w-0">
                 <Tag size={12} className="text-gray-400 flex-shrink-0" />
@@ -123,13 +123,13 @@ function SubcategoryList({ parentId, parentCategory, canEdit }) {
                 <div className="flex items-center gap-1 flex-shrink-0 ml-3">
                   <button
                     onClick={() => setEditSub(sub)}
-                    className="p-1.5 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                    className="p-1.5 rounded-md text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
                     <Pencil size={12} />
                   </button>
                   <button
                     onClick={() => setConfirmSub(sub)}
-                    className="p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                    className="p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                   >
                     <Trash2 size={12} />
                   </button>
@@ -141,7 +141,7 @@ function SubcategoryList({ parentId, parentCategory, canEdit }) {
           {canEdit && (
             <button
               onClick={() => setAddOpen(true)}
-              className="flex items-center gap-1.5 w-full px-4 py-2.5 text-xs font-medium text-primary-600 hover:bg-primary-50 transition-colors border-t border-gray-100"
+              className="flex items-center gap-1.5 w-full px-4 py-2.5 text-xs font-medium text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors border-t border-gray-100 dark:border-gray-700"
             >
               <Plus size={12} /> Add subcategory
             </button>
@@ -261,7 +261,7 @@ export default function CategoriesPage() {
       </div>
 
       <Card>
-        <div className="p-4 border-b border-gray-50">
+        <div className="p-4 border-b border-gray-50 dark:border-gray-700">
           <div className="relative max-w-xs">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -283,7 +283,7 @@ export default function CategoriesPage() {
                 <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
               {isLoading ? (
                 <tr><td colSpan={4} className="px-4 py-12 text-center text-gray-400">Loading…</td></tr>
               ) : rows.length === 0 ? (

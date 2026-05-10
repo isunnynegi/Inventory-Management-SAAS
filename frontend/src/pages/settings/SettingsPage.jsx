@@ -18,15 +18,18 @@ const TABS = ["General", "Storefront"];
 
 function Toggle({ checked, onChange, label, description }) {
   return (
-    <label className={`flex items-center justify-between p-4 border-2 rounded-xl cursor-pointer transition-all hover:border-gray-300 dark:hover:border-gray-500`}
-      style={{ borderColor: checked ? "#4F46E5" : undefined, background: checked ? "#EEF2FF" : undefined }}>
+    <label className={`flex items-center justify-between p-4 border-2 rounded-xl cursor-pointer transition-all ${
+      checked
+        ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20 dark:border-primary-600"
+        : "border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-500"
+    }`}>
       <div>
         <p className="font-medium text-sm text-gray-800 dark:text-gray-200">{label}</p>
         {description && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{description}</p>}
       </div>
       <div className="relative flex-shrink-0 ml-4" onClick={e => e.stopPropagation()}>
         <input type="checkbox" className="sr-only peer" checked={checked} onChange={e => onChange(e.target.checked)} readOnly />
-        <div className="w-10 h-6 bg-gray-200 rounded-full peer-checked:bg-primary-600 transition-colors" onClick={() => onChange(!checked)} />
+        <div className="w-10 h-6 bg-gray-200 dark:bg-gray-600 rounded-full peer-checked:bg-primary-600 transition-colors" onClick={() => onChange(!checked)} />
         <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${checked ? "translate-x-4" : ""}`} onClick={() => onChange(!checked)} />
       </div>
     </label>
@@ -351,8 +354,11 @@ export default function SettingsPage() {
               <h2 className="font-semibold text-gray-800 dark:text-gray-200 mb-1">Tax Settings</h2>
               <p className="text-sm text-gray-400 dark:text-gray-500 mb-5">Choose how tax is applied across your store</p>
               <div className="space-y-4">
-                <label className={`flex items-center justify-between p-4 border-2 rounded-xl cursor-pointer transition-all hover:border-gray-300 dark:hover:border-gray-500`}
-                  style={{ borderColor: taxEnabled ? "#4F46E5" : undefined, background: taxEnabled ? "#EEF2FF" : undefined }}>
+                <label className={`flex items-center justify-between p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                  taxEnabled
+                    ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20 dark:border-primary-600"
+                    : "border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-500"
+                }`}>
                   <div>
                     <p className="font-medium text-sm text-gray-800 dark:text-gray-200">Enable store-wide tax rate</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">

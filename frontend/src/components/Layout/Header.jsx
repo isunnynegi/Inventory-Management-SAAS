@@ -1,10 +1,11 @@
-import { Bell, LogOut, User, ChevronDown, ShieldCheck, UserX, Sun, Moon, Menu } from "lucide-react";
+import { LogOut, User, ChevronDown, ShieldCheck, UserX, Sun, Moon, Menu } from "lucide-react";
 import { useState } from "react";
 import { useAuthStore } from "../../stores/authStore.js";
 import { useThemeStore } from "../../stores/themeStore.js";
 import { useNavigate } from "react-router-dom";
 import { authApi, orgApi } from "../../api/index.js";
 import toast from "react-hot-toast";
+import NotificationBell from "./NotificationBell.jsx";
 
 export default function Header({ collapsed, mobileOpen, setMobileOpen }) {
   const { user, clearAuth, isSuperAdmin, impersonating, impersonatedOrgName, stopImpersonation, updateOrg } = useAuthStore();
@@ -73,9 +74,7 @@ export default function Header({ collapsed, mobileOpen, setMobileOpen }) {
           </button>
 
           {/* Notifications */}
-          <button className="relative p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors">
-            <Bell size={18} />
-          </button>
+          <NotificationBell />
 
           {/* User menu */}
           <div className="relative">

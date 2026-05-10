@@ -34,6 +34,9 @@ import CustomerRegisterPage from "./pages/store/CustomerRegisterPage.jsx";
 import CustomerAccountPage from "./pages/store/CustomerAccountPage.jsx";
 import StorefrontHomePage from "./pages/store/StorefrontHomePage.jsx";
 import CouponsPage from "./pages/coupons/CouponsPage.jsx";
+import SubscriptionPage from "./pages/settings/SubscriptionPage.jsx";
+import SubscriptionsAdminPage from "./pages/settings/SubscriptionsAdminPage.jsx";
+import FeatureGate from "./components/ui/FeatureGate.jsx";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -72,14 +75,15 @@ export default function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/categories" element={<CategoriesPage />} />
               <Route path="/products" element={<ProductsPage />} />
-              <Route path="/suppliers" element={<SuppliersPage />} />
-              <Route path="/customers" element={<CustomersPage />} />
-              <Route path="/purchases" element={<PurchasesPage />} />
+              <Route path="/suppliers" element={<FeatureGate feature="suppliers"><SuppliersPage /></FeatureGate>} />
+              <Route path="/customers" element={<FeatureGate feature="customers"><CustomersPage /></FeatureGate>} />
+              <Route path="/purchases" element={<FeatureGate feature="purchase"><PurchasesPage /></FeatureGate>} />
               <Route path="/sales" element={<SalesPage />} />
               <Route path="/stock-adjustments" element={<StockAdjustmentsPage />} />
-              <Route path="/invoices" element={<InvoicesPage />} />
-              <Route path="/reports" element={<ReportsPage />} />
+              <Route path="/invoices" element={<FeatureGate feature="gst_invoice"><InvoicesPage /></FeatureGate>} />
+              <Route path="/reports" element={<FeatureGate feature="data_export"><ReportsPage /></FeatureGate>} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/settings/subscription" element={<SubscriptionPage />} />
             </Route>
           </Route>
           <Route element={<ProtectedRoute adminOnly />}>
@@ -92,6 +96,7 @@ export default function App() {
           <Route element={<ProtectedRoute superAdminOnly />}>
             <Route element={<Layout />}>
               <Route path="/organizations" element={<OrganizationsPage />} />
+              <Route path="/subscriptions" element={<SubscriptionsAdminPage />} />
             </Route>
           </Route>
           {/* Public storefront — no auth required */}

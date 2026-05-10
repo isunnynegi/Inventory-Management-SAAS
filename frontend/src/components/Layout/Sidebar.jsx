@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard, Package, ShoppingCart, TrendingUp, BarChart3, FileText,
   Settings, Users, Truck, UserCircle, Layers, ClipboardList, ChevronLeft,
-  ChevronRight, Store, Scan, Building2, ShieldCheck, Globe, Tag, X,
+  ChevronRight, Store, Scan, Building2, ShieldCheck, Globe, Tag, X, Zap,
 } from "lucide-react";
 import { useAuthStore } from "../../stores/authStore.js";
 
@@ -17,13 +17,15 @@ const SUPERADMIN_NAV = [
     section: "Platform",
     items: [
       { to: "/organizations", icon: Building2, label: "Organizations" },
-      { to: "/users", icon: Users, label: "All Users" },
+      { to: "/subscriptions", icon: Zap,       label: "Subscriptions" },
+      { to: "/users",         icon: Users,     label: "All Users" },
     ],
   },
   {
     section: "System",
     items: [
-      { to: "/settings", icon: Settings, label: "Platform Settings" },
+      { to: "/settings",              icon: Settings, label: "Platform Settings" },
+      { to: "/settings/subscription", icon: Zap,      label: "Subscriptions" },
     ],
   },
 ];
@@ -76,8 +78,9 @@ const STORE_NAV = [
     section: "Settings",
     adminOnly: true,
     items: [
-      { to: "/users",     icon: Users,    label: "Team & Permissions", adminOnly: true },
-      { to: "/settings",  icon: Settings, label: "Store settings",     adminOnly: true },
+      { to: "/users",                  icon: Users,    label: "Team & Permissions",  adminOnly: true },
+      { to: "/settings",               icon: Settings, label: "Store settings",        adminOnly: true },
+      { to: "/settings/subscription",  icon: Zap,      label: "Subscription",          adminOnly: true },
     ],
   },
 ];

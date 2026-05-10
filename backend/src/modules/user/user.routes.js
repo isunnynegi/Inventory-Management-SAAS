@@ -64,10 +64,12 @@ export const remove = asyncHandler(async (req, res) => {
   return ApiResponse.ok(res, "User removed");
 });
 
+import { requireUserLimit } from "../../middleware/featureGate.js";
+
 const router = Router();
 router.use(authenticate);
 router.get("/",              authorize("admin","superAdmin"), list);
-router.post("/invite",       authorize("admin","superAdmin"), invite);
+router.post("/invite",       authorize("admin","superAdmin"), requireUserLimit, invite);
 router.patch("/:id/role",    authorize("admin","superAdmin"), updateRole);
 router.patch("/:id/toggle",  authorize("admin","superAdmin"), toggleActive);
 router.delete("/:id",        authorize("admin","superAdmin"), remove);

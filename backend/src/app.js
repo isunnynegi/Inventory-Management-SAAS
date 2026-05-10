@@ -27,6 +27,8 @@ import userRoutes         from "./modules/user/user.routes.js";
 import storefrontRoutes   from "./modules/storefront/storefront.routes.js";
 import sfOrderRoutes      from "./modules/storefrontOrder/storefrontOrder.routes.js";
 import couponRoutes        from "./modules/coupon/coupon.routes.js";
+import planRoutes          from "./modules/plan/plan.routes.js";
+import subscriptionRoutes  from "./modules/subscription/subscription.routes.js";
 
 const app = express();
 
@@ -84,6 +86,8 @@ app.use("/api/v1/users",         userRoutes);
 app.use("/api/v1/store/:slug",   storefrontRoutes);
 app.use("/api/v1/storefront-orders", sfOrderRoutes);
 app.use("/api/v1/coupons",       couponRoutes);
+app.use("/api/v1/plans",         planRoutes);
+app.use("/api/v1/subscriptions", subscriptionRoutes);
 
 // ── Error handling ────────────────────────────────────────────────────────────
 app.use(notFound);

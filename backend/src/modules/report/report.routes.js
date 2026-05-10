@@ -128,8 +128,11 @@ export const profitReport = asyncHandler(async (req, res) => {
   return ApiResponse.ok(res, "Profit report", { revenue, cost, profit, margin: Number(margin) });
 });
 
+import { requireFeature } from "../../middleware/featureGate.js";
+
 const router = Router();
 router.use(authenticate);
+router.use(requireFeature("data_export"));
 router.get("/sales",    salesReport);
 router.get("/purchases", purchaseReport);
 router.get("/stock",    stockReport);

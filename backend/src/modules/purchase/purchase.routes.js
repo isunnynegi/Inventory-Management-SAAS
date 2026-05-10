@@ -98,8 +98,11 @@ export const remove = asyncHandler(async (req, res) => {
   return ApiResponse.ok(res, "Purchase deleted and stock reversed");
 });
 
+import { requireFeature } from "../../middleware/featureGate.js";
+
 const router = Router();
 router.use(authenticate);
+router.use(requireFeature("purchase"));
 router.get("/",    list);
 router.post("/",   authorize("admin","superAdmin","staff"), create);
 router.get("/:id", getOne);

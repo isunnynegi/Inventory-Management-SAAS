@@ -62,11 +62,13 @@ export const getLowStock = asyncHandler(async (req, res) => {
   return ApiResponse.ok(res, "Low stock products", products);
 });
 
+import { requireProductLimit } from "../../middleware/featureGate.js";
+
 const router = Router();
 router.use(authenticate);
 router.get("/low-stock", getLowStock);
 router.get("/",          list);
-router.post("/",         authorize("admin","superAdmin"), create);
+router.post("/",         authorize("admin","superAdmin"), requireProductLimit, create);
 router.get("/:id",       getOne);
 router.put("/:id",       authorize("admin","superAdmin"), update);
 router.delete("/:id",    authorize("admin","superAdmin"), remove);

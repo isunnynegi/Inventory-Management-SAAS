@@ -126,8 +126,11 @@ export const viewPDF = asyncHandler(async (req, res) => {
   doc.end();
 });
 
+import { requireFeature } from "../../middleware/featureGate.js";
+
 const router = Router();
 router.use(authenticate);
+router.use(requireFeature("gst_invoice"));
 router.post("/from-sale/:saleId", authorize("admin","superAdmin","staff"), fromSale);
 router.post("/",                  authorize("admin","superAdmin","staff"), create);
 router.get("/",                   list);

@@ -106,3 +106,15 @@ export const couponApi = {
   update: (id, d) => api.patch(`/coupons/${id}`, d).then(r),
   delete: id => api.delete(`/coupons/${id}`).then(r),
 };
+export const planApi = {
+  list: () => api.get("/plans").then(r),
+};
+export const subscriptionApi = {
+  getMy:          () => api.get("/subscriptions/my").then(r),
+  adminList:      p  => api.get("/subscriptions/admin", { params: p }).then(r),
+  adminGet:       id => api.get(`/subscriptions/admin/${id}`).then(r),
+  adminSetPlan:   (id, d) => api.post(`/subscriptions/admin/${id}/plan`, d).then(r),
+  adminPayment:   (id, d) => api.post(`/subscriptions/admin/${id}/payment`, d).then(r),
+  adminSetWaiver: (id, d) => api.patch(`/subscriptions/admin/${id}/waiver`, d).then(r),
+};
+

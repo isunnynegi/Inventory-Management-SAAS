@@ -47,9 +47,12 @@ export const remove = asyncHandler(async (req, res) => {
   return ApiResponse.ok(res, "Customer deleted");
 });
 
+import { requireFeature } from "../../middleware/featureGate.js";
+
 // ROUTER
 const router = Router();
 router.use(authenticate);
+router.use(requireFeature("customers"));
 router.get("/",     list);
 router.post("/",    authorize("admin","superAdmin"), create);
 router.get("/:id",  getOne);

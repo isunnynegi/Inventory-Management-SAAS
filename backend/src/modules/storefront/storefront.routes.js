@@ -38,6 +38,7 @@ router.post("/auth/logout", authenticateCustomer, ctrl.customerLogout);
 router.get("/auth/me", authenticateCustomer, ctrl.getCustomerMe);
 router.patch("/auth/me", authenticateCustomer, ctrl.updateCustomerProfile);
 router.post("/auth/me/addresses", authenticateCustomer, ctrl.addAddress);
+router.patch("/auth/me/addresses/:addressId/primary", authenticateCustomer, ctrl.setDefaultAddress);
 router.delete("/auth/me/addresses/:addressId", authenticateCustomer, ctrl.removeAddress);
 
 // Orders (requires customer auth)

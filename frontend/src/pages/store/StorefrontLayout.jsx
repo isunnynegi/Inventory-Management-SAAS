@@ -33,13 +33,21 @@ export default function StorefrontLayout() {
     return () => { document.documentElement.style.removeProperty("--sf-primary"); };
   }, [store?.branding?.primaryColor]);
 
-  // Restore customer session from cookie
+  // Always restore customer session on mount — token is in sessionStorage so getMe() will have auth
   useEffect(() => {
-    if (!window.__sfAccessToken) {
-      api.getMe()
-        .then(res => useCustomerStore.getState().setCustomer({ customer: res.data, accessToken: window.__sfAccessToken || "" }))
-        .catch(() => {});
-    }
+    api.getMe()
+      .then(res => {
+        const token = window.__sfAccessToken || sessionStorage.getItem("_sf_at") || "";
+        useCustomerStore.getState().setCustomer({ customer: res.data, accessToken: token });
+      })
+      .catch(() => {
+        // Only clear if there was a stored token (actual auth failure, not just anonymous)
+        if (sessionStorage.getItem("_sf_at")) {
+          sessionStorage.removeItem("_sf_at");
+          window.__sfAccessToken = null;
+          useCustomerStore.getState().clearCustomer();
+        }
+      });
   }, [slug]);
 
   // Listen for logout events

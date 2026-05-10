@@ -38,17 +38,21 @@ export const useCartStore = create(
   )
 );
 
-// Customer auth state (not persisted — restored via refresh token cookie)
+const SF_TOKEN_KEY = "_sf_at";
+
 export const useCustomerStore = create((set) => ({
   customer: null,
   accessToken: null,
   isAuthenticated: false,
   setCustomer: ({ customer, accessToken }) => {
     window.__sfAccessToken = accessToken;
+    if (accessToken) sessionStorage.setItem(SF_TOKEN_KEY, accessToken);
     set({ customer, accessToken, isAuthenticated: true });
   },
+  updateCustomer: (customer) => set(s => ({ customer: { ...s.customer, ...customer } })),
   clearCustomer: () => {
     window.__sfAccessToken = null;
+    sessionStorage.removeItem(SF_TOKEN_KEY);
     set({ customer: null, accessToken: null, isAuthenticated: false });
   },
 }));

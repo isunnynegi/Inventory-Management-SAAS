@@ -322,6 +322,15 @@ export const removeAddress = asyncHandler(async (req, res) => {
   return ApiResponse.ok(res, "Address removed", customer.addresses);
 });
 
+export const setDefaultAddress = asyncHandler(async (req, res) => {
+  const customer = await StorefrontCustomer.findById(req.storefrontCustomer._id);
+  customer.addresses.forEach(a => {
+    a.isDefault = a._id.toString() === req.params.addressId;
+  });
+  await customer.save();
+  return ApiResponse.ok(res, "Primary address updated", customer.addresses);
+});
+
 // ── Orders ────────────────────────────────────────────────────────────────────
 let _orderCounter = Math.floor(Math.random() * 1000);
 

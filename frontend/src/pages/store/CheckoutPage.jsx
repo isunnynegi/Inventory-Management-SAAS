@@ -49,10 +49,15 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState(
     store?.paymentMethods?.[0] || "cash"
   );
+  const defaultAddrIdx = (() => {
+    if (!customer?.addresses?.length) return null;
+    const i = customer.addresses.findIndex(a => a.isDefault);
+    return i >= 0 ? i : 0;
+  })();
+  const [savedAddrIdx, setSavedAddrIdx] = useState(defaultAddrIdx);
   const [address, setAddress] = useState(
-    customer?.addresses?.find(a => a.isDefault) || {}
+    defaultAddrIdx !== null ? customer.addresses[defaultAddrIdx] : {}
   );
-  const [savedAddrIdx, setSavedAddrIdx] = useState(null);
   const [notes, setNotes] = useState("");
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);

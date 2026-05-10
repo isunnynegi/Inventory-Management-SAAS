@@ -70,6 +70,8 @@ export const storeApi = (slug) => {
     addAddress:     (d)     => sfApi.post(`/store/${slug}/auth/me/addresses`, d, withSlug({})).then(r),
     setDefaultAddress: (id) => sfApi.patch(`/store/${slug}/auth/me/addresses/${id}/primary`, {}, withSlug({})).then(r),
     removeAddress:  (id)    => sfApi.delete(`/store/${slug}/auth/me/addresses/${id}`, withSlug({})).then(r),
+    getCart:           ()   => sfApi.get(`/store/${slug}/auth/me/cart`, withSlug({})).then(r),
+    syncCart:          (items) => sfApi.put(`/store/${slug}/auth/me/cart`, { items }, withSlug({})).then(r),
     createOrder:       (d)  => sfApi.post(`/store/${slug}/orders`, d, withSlug({})).then(r),
     listOrders:        (p)  => sfApi.get(`/store/${slug}/orders`, { params: p, ...withSlug({}) }).then(r),
     getOrder:          (id) => sfApi.get(`/store/${slug}/orders/${id}`, withSlug({})).then(r),

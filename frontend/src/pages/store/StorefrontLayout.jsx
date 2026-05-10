@@ -1,7 +1,7 @@
 import { Outlet, Link, useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ShoppingCart, User, LogOut, Store, Menu, X, Search } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { storeApi } from "../../api/storefront.js";
 import { useCartStore, useCustomerStore } from "../../stores/storefrontStore.js";
 import toast from "react-hot-toast";
@@ -11,9 +11,14 @@ export default function StorefrontLayout() {
   const nav = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const { customer, isAuthenticated, clearCustomer } = useCustomerStore();
-  const itemCount = useCartStore(s => s.items.reduce((a, i) => a + i.qty, 0));
+  const { items, setItems, itemCount } = useCartStore(s => ({
+    items: s.items,
+    setItems: s.setItems,
+    itemCount: s.items.reduce((a, i) => a + i.qty, 0),
+  }));
 
   const api = storeApi(slug);
+  const cartSyncTimerRef = useRef(null);
 
   const { data: storeData, isError } = useQuery({
     queryKey: ["store-info", slug],
@@ -36,9 +41,27 @@ export default function StorefrontLayout() {
   // Always restore customer session on mount — token is in sessionStorage so getMe() will have auth
   useEffect(() => {
     api.getMe()
-      .then(res => {
+      .then(async res => {
         const token = window.__sfAccessToken || sessionStorage.getItem("_sf_at") || "";
         useCustomerStore.getState().setCustomer({ customer: res.data, accessToken: token });
+        // Load cart from DB and merge with any local items
+        try {
+          const cartRes = await api.getCart();
+          const dbItems = cartRes.data || [];
+          const localItems = useCartStore.getState().items;
+          if (dbItems.length > 0) {
+            // Merge: prefer DB qty for products in both, keep local-only items
+            const dbMap = Object.fromEntries(dbItems.map(i => [i.productId, i]));
+            const merged = [...dbItems];
+            for (const li of localItems) {
+              if (!dbMap[li.productId]) merged.push(li);
+            }
+            setItems(merged);
+          } else if (localItems.length > 0) {
+            // Push local items to DB immediately
+            api.syncCart(localItems).catch(() => {});
+          }
+        } catch {}
       })
       .catch(() => {
         // Only clear if there was a stored token (actual auth failure, not just anonymous)
@@ -49,6 +72,16 @@ export default function StorefrontLayout() {
         }
       });
   }, [slug]);
+
+  // Sync cart changes to DB with 2s debounce (only when logged in)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (cartSyncTimerRef.current) clearTimeout(cartSyncTimerRef.current);
+    cartSyncTimerRef.current = setTimeout(() => {
+      api.syncCart(items).catch(() => {});
+    }, 2000);
+    return () => clearTimeout(cartSyncTimerRef.current);
+  }, [items, isAuthenticated]);
 
   // Listen for logout events
   useEffect(() => {

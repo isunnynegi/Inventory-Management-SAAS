@@ -4,6 +4,7 @@ import { ApiError } from "../../utils/ApiError.js";
 import { paginate } from "../../utils/paginate.js";
 import Invoice from "./invoice.model.js";
 import Sale from "../sale/sale.model.js";
+import Product from "../product/product.model.js";
 import Organization from "../organization/organization.model.js";
 import { Router } from "express";
 import { authenticate, authorize } from "../../middleware/auth.js";
@@ -21,15 +22,29 @@ export const fromSale = asyncHandler(async (req, res) => {
   const org = await Organization.findById(req.organizationId);
   const invoiceNumber = await genInvoiceNumber(org);
 
-  const items = sale.items.map(i => ({
-    productId: i.productId, name: i.productName, qty: i.qty,
-    unit: i.unit, price: i.sellingPrice, taxPercent: i.taxPercent,
-    taxAmount: i.taxAmount, lineTotal: i.lineTotal,
-  }));
+  // Fetch products to get SKU and HSN from attributes
+  const pids = sale.items.map(i => i.productId).filter(Boolean);
+  const products = pids.length
+    ? await Product.find({ _id: { $in: pids } }).lean()
+    : [];
+  const prodMap = Object.fromEntries(products.map(p => [p._id.toString(), p]));
+  const getAttr = (p, key) => p?.attributes?.find(a => a.key === key)?.value || "";
+
+  const items = sale.items.map(i => {
+    const p = prodMap[i.productId?.toString()] || {};
+    return {
+      productId: i.productId, name: i.productName,
+      sku: p.sku || "", hsn: getAttr(p, "hsn"),
+      qty: i.qty, unit: i.unit,
+      price: i.sellingPrice, taxPercent: i.taxPercent,
+      taxAmount: i.taxAmount, lineTotal: i.lineTotal,
+    };
+  });
 
   const invoice = await Invoice.create({
     invoiceNumber, saleId: sale._id,
     customerId: sale.customerId, customerName: sale.customerName,
+    placeOfSupply: org.address?.state || "",
     items, subtotal: sale.subtotal, discount: sale.discount, taxTotal: sale.taxTotal,
     grandTotal: sale.totalAmount, amountPaid: sale.amountPaid,
     status: sale.paymentStatus, paymentMethod: sale.paymentMethod,

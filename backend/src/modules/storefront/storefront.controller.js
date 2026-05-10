@@ -470,12 +470,14 @@ export const createOrder = asyncHandler(async (req, res) => {
         items: orderItems.map(i => ({
           productId: i.productId,
           name: i.name,
+          sku: i.sku || "",
           qty: i.qty,
           price: i.unitPrice,
           taxPercent: i.taxPercent,
           taxAmount: i.taxAmount,
           lineTotal: i.lineTotal,
         })),
+        placeOfSupply: org.address?.state || "",
         subtotal: order.subtotal,
         discount: order.couponDiscount || 0,
         deliveryCharge: order.deliveryCharge || 0,
@@ -612,6 +614,17 @@ export const submitUtr = asyncHandler(async (req, res) => {
   await order.save();
 
   return ApiResponse.ok(res, "UTR submitted. Payment will be verified by the store.");
+});
+
+export const getCart = asyncHandler(async (req, res) => {
+  const customer = await StorefrontCustomer.findById(req.storefrontCustomer._id).select("cart").lean();
+  return ApiResponse.ok(res, "Cart", customer.cart || []);
+});
+
+export const syncCart = asyncHandler(async (req, res) => {
+  const items = Array.isArray(req.body.items) ? req.body.items : [];
+  await StorefrontCustomer.findByIdAndUpdate(req.storefrontCustomer._id, { cart: items });
+  return ApiResponse.ok(res, "Cart synced", items);
 });
 
 export const getOrderInvoicePdf = asyncHandler(async (req, res) => {

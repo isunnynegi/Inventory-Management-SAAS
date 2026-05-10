@@ -40,6 +40,8 @@ router.patch("/auth/me", authenticateCustomer, ctrl.updateCustomerProfile);
 router.post("/auth/me/addresses", authenticateCustomer, ctrl.addAddress);
 router.patch("/auth/me/addresses/:addressId/primary", authenticateCustomer, ctrl.setDefaultAddress);
 router.delete("/auth/me/addresses/:addressId", authenticateCustomer, ctrl.removeAddress);
+router.get("/auth/me/cart", authenticateCustomer, ctrl.getCart);
+router.put("/auth/me/cart", authenticateCustomer, ctrl.syncCart);
 
 // Orders (requires customer auth)
 router.post("/orders", authenticateCustomer, sfOrderLimiter, ctrl.createOrder);

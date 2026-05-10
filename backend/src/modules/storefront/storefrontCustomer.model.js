@@ -12,6 +12,17 @@ const addressSchema = new mongoose.Schema({
   isDefault: { type: Boolean, default: false },
 }, { _id: true });
 
+const cartItemSchema = new mongoose.Schema({
+  productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
+  name: { type: String, required: true },
+  sku: { type: String },
+  image: { type: String },
+  unitPrice: { type: Number, required: true },
+  taxPercent: { type: Number, default: 0 },
+  qty: { type: Number, required: true, min: 1 },
+  stock: { type: Number, default: 0 },
+}, { _id: false });
+
 const storefrontCustomerSchema = new mongoose.Schema({
   // Optional: records which store the customer first registered at (informational only)
   organizationId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
@@ -20,6 +31,7 @@ const storefrontCustomerSchema = new mongoose.Schema({
   phone: { type: String, trim: true },
   password: { type: String, required: true, select: false },
   addresses: [addressSchema],
+  cart: { type: [cartItemSchema], default: [] },
   refreshTokens: [{
     token: { type: String },
     expiresAt: { type: Date },

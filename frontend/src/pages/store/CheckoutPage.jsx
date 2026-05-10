@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { MapPin, Store, CreditCard, Smartphone, Banknote, ArrowLeft, Check, Tag, X, Loader2 } from "lucide-react";
@@ -43,25 +43,38 @@ export default function CheckoutPage() {
   const { customer } = useCustomerStore();
   const currencySymbol = store?.currencySymbol || "₹";
 
-  const [fulfillmentType, setFulfillmentType] = useState(
-    store?.deliveryEnabled ? "delivery" : "pickup"
-  );
-  const [paymentMethod, setPaymentMethod] = useState(
-    store?.paymentMethods?.[0] || "cash"
-  );
-  const defaultAddrIdx = (() => {
-    if (!customer?.addresses?.length) return null;
-    const i = customer.addresses.findIndex(a => a.isDefault);
-    return i >= 0 ? i : 0;
-  })();
-  const [savedAddrIdx, setSavedAddrIdx] = useState(defaultAddrIdx);
-  const [address, setAddress] = useState(
-    defaultAddrIdx !== null ? customer.addresses[defaultAddrIdx] : {}
-  );
+  // Initialize from store/customer data — both load asynchronously after mount
+  const [fulfillmentType, setFulfillmentType] = useState("pickup");
+  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [savedAddrIdx, setSavedAddrIdx] = useState(null);
+  const [address, setAddress] = useState({});
   const [notes, setNotes] = useState("");
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponLoading, setCouponLoading] = useState(false);
+
+  const storeInitRef = useRef(false);
+  const customerInitRef = useRef(false);
+
+  // Set fulfillment + payment once store data arrives
+  useEffect(() => {
+    if (store && !storeInitRef.current) {
+      storeInitRef.current = true;
+      setFulfillmentType(store.deliveryEnabled ? "delivery" : "pickup");
+      if (store.paymentMethods?.length) setPaymentMethod(store.paymentMethods[0]);
+    }
+  }, [store?.slug]);
+
+  // Pre-select primary address once customer data arrives
+  useEffect(() => {
+    if (customer?.addresses?.length && !customerInitRef.current) {
+      customerInitRef.current = true;
+      const i = customer.addresses.findIndex(a => a.isDefault);
+      const idx = i >= 0 ? i : 0;
+      setSavedAddrIdx(idx);
+      setAddress(customer.addresses[idx]);
+    }
+  }, [customer?._id]);
 
   if (!items || items.length === 0) {
     nav(`/store/${slug}/cart`);
@@ -101,6 +114,7 @@ export default function CheckoutPage() {
     }),
     onSuccess: async ({ data: order }) => {
       clearCart();
+      api.syncCart([]).catch(() => {});
       if (paymentMethod === "card" && store?.juspayEnabled) {
         // Initiate Juspay
         try {

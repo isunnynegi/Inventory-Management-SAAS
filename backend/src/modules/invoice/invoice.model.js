@@ -4,6 +4,8 @@ import { basePlugin } from "../../common/basePlugin.js";
 const invoiceItemSchema = new mongoose.Schema({
   productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
   name: { type: String, required: true },
+  sku: { type: String },
+  hsn: { type: String },
   qty: { type: Number, required: true, min: 0.01 },
   unit: { type: String },
   price: { type: Number, required: true, min: 0 },
@@ -20,6 +22,9 @@ const invoiceSchema = new mongoose.Schema({
   customerName: { type: String },
   customerPhone: { type: String },
   customerAddress: { type: String },
+  customerGstin: { type: String },
+  paymentReference: { type: String },
+  placeOfSupply: { type: String },
   organizationId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   items: [invoiceItemSchema],
   subtotal: { type: Number, default: 0 },

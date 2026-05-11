@@ -37,6 +37,7 @@ import CouponsPage from "./pages/coupons/CouponsPage.jsx";
 import SubscriptionPage from "./pages/settings/SubscriptionPage.jsx";
 import SubscriptionsAdminPage from "./pages/settings/SubscriptionsAdminPage.jsx";
 import FeatureGate from "./components/ui/FeatureGate.jsx";
+import LandingPage from "./pages/landing/LandingPage.jsx";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -110,8 +111,8 @@ export default function App() {
             <Route path="register" element={<CustomerRegisterPage />} />
             <Route path="account" element={<CustomerAccountPage />} />
           </Route>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
       <ReactQueryDevtools initialIsOpen={false} />

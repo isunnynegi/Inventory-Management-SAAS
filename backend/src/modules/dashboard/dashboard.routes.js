@@ -44,7 +44,7 @@ export const getStats = asyncHandler(async (req, res) => {
     Sale.find({ organizationId: orgId }).sort({ date: -1 }).limit(5).lean(),
     Purchase.find({ organizationId: orgId }).sort({ date: -1 }).limit(5).lean(),
     Product.find({ organizationId: orgId, $expr: { $lte: ["$stock","$reorderLevel"] } })
-      .populate("categoryId", "name").select("name sku stock reorderLevel unit").lean(),
+      .populate("categoryId", "name").select("name sku stock reorderLevel unit"),
   ]);
 
   // Monthly sales chart (last 6 months)

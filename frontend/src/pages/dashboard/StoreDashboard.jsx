@@ -80,7 +80,7 @@ export default function StoreDashboard() {
           ) : (
             <div className="space-y-2 overflow-y-auto max-h-[200px]">
               {lowStockList.slice(0,8).map(p => (
-                <div key={p.id} className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-gray-700 last:border-0">
+                <div key={p._id || p.id} className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-gray-700 last:border-0">
                   <div>
                     <p className="text-sm font-medium text-gray-800 truncate max-w-[130px]">{p.name}</p>
                     <p className="text-xs text-gray-400">{p.categoryId?.name || "—"}</p>

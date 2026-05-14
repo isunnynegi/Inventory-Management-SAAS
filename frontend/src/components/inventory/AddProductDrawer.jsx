@@ -131,7 +131,7 @@ export default function AddProductDrawer({ open, onClose, editProduct = null }) 
     : null;
 
   // Conditional section visibility
-  const selectedCategoryName = categories.find(c => c.id === form.category)?.name || "";
+  const selectedCategoryName = categories.find(c => (c._id || c.id) === form.category)?.name || "";
   const visibleSections = schema
     ? schema.sections.filter(sec => {
       if (!sec.condition) return true;

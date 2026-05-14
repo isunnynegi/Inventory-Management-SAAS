@@ -49,12 +49,12 @@ export default function PurchasesPage() {
   const createMutation = useMutation({
     mutationFn: (d) => {
       const items = d.items.map(i => {
-        const product = products.find(p => p.id === i.productId);
+        const product = products.find(p => (p._id || p.id) === i.productId);
         const lineBase = Number(i.qty) * Number(i.costPrice);
         const taxAmt = lineBase * (Number(i.taxPercent) / 100);
         return { ...i, qty: Number(i.qty), costPrice: Number(i.costPrice), taxPercent: Number(i.taxPercent), taxAmount: taxAmt, lineTotal: lineBase + taxAmt, supplierName: product?.name };
       });
-      const supplierObj = suppliers.find(s => s.id === d.supplierId);
+      const supplierObj = suppliers.find(s => (s._id || s.id) === d.supplierId);
       return purchaseApi.create({ ...d, items, subtotal, taxTotal, discount: Number(d.discount), totalAmount: total, amountPaid: Number(d.amountPaid), supplierName: supplierObj?.name });
     },
     onSuccess: () => { qc.invalidateQueries(["purchases"]); qc.invalidateQueries(["products"]); toast.success("Purchase recorded!"); setModal(false); reset(); },

@@ -20,7 +20,7 @@ export const listSubs = asyncHandler(async (req, res) => {
   const parent = await Category.findOne({ _id: req.params.id, organizationId: req.organizationId });
   if (!parent) throw ApiError.notFound("Category not found");
   const subs = await Category.find({ organizationId: req.organizationId, parent: req.params.id })
-    .sort({ name: 1 }).lean();
+    .sort({ name: 1 });
   return ApiResponse.ok(res, "Subcategories", subs);
 });
 

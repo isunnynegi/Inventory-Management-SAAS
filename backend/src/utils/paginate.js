@@ -7,7 +7,7 @@ export const paginate = async (Model, query = {}, options = {}) => {
   let q = Model.find(query).sort(sort).skip(skip).limit(limit);
   if (options.select) q = q.select(options.select);
   if (options.populate) q = q.populate(options.populate);
-  if (options.lean !== false) q = q.lean();
+  if (options.lean === true) q = q.lean();
 
   const [docs, totalDocs] = await Promise.all([q, Model.countDocuments(query)]);
   return { docs, totalDocs, limit, page, totalPages: Math.ceil(totalDocs / limit) };

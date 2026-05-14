@@ -58,7 +58,7 @@ export const getLowStock = asyncHandler(async (req, res) => {
   const products = await Product.find({
     organizationId: req.organizationId,
     $expr: { $lte: ["$stock", "$reorderLevel"] },
-  }).populate("categoryId", "name").lean();
+  }).populate("categoryId", "name");
   return ApiResponse.ok(res, "Low stock products", products);
 });
 

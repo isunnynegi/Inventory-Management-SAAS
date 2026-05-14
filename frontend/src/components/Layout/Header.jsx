@@ -102,11 +102,19 @@ export default function Header({ collapsed, mobileOpen, setMobileOpen }) {
                 <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
                 <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 py-1 z-50">
                   <button
-                    onClick={() => { nav("/settings"); setOpen(false); }}
+                    onClick={() => { nav("/profile"); setOpen(false); }}
                     className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   >
-                    <User size={14} /> Profile & Settings
+                    <User size={14} /> Profile
                   </button>
+                  {!superAdmin && (
+                    <button
+                      onClick={() => { nav("/settings"); setOpen(false); }}
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <User size={14} /> Settings
+                    </button>
+                  )}
                   <hr className="my-1 border-gray-100 dark:border-gray-700" />
                   <button
                     onClick={logout}

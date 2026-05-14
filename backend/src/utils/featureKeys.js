@@ -14,6 +14,7 @@ export const FEATURES = {
   ADVANCED_ANALYTICS:   "advanced_analytics",
   STOREFRONT:           "storefront",
   LEDGER:               "ledger",
+  OFFLINE_MANAGEMENT:   "offline_management",
 };
 
 export const PLAN_FEATURES = {
@@ -26,7 +27,7 @@ export const PLAN_FEATURES = {
     "purchase", "customers", "suppliers",
     "gst_invoice", "data_export",
     "barcode", "multi_branch", "rbac",
-    "advanced_analytics", "storefront", "ledger",
+    "advanced_analytics", "storefront", "ledger", "offline_management",
   ],
 };
 

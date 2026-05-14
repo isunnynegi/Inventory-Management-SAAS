@@ -24,8 +24,7 @@ const SUPERADMIN_NAV = [
   {
     section: "System",
     items: [
-      { to: "/settings",              icon: Settings, label: "Platform Settings" },
-      { to: "/settings/subscription", icon: Zap,      label: "Subscriptions" },
+      { to: "/settings", icon: Settings, label: "Platform Settings" },
     ],
   },
 ];

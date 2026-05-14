@@ -11,6 +11,7 @@ router.post("/forgot-password",  strictLimiter, ctrl.forgotPassword);
 router.post("/reset-password",   strictLimiter, ctrl.resetPassword);
 router.use(authenticate);
 router.get("/me",                ctrl.getMe);
+router.patch("/me",              ctrl.updateMe);
 router.post("/logout",           ctrl.logout);
 router.patch("/change-password", ctrl.changePassword);
 export default router;

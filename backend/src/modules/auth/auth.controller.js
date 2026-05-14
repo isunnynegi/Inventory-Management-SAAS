@@ -1,7 +1,9 @@
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
+import { ApiError } from "../../utils/ApiError.js";
 import * as svc from "./auth.service.js";
 import Organization from "../organization/organization.model.js";
+import User from "../user/user.model.js";
 
 const setCookie = (res, token) => res.cookie("refreshToken", token, {
   httpOnly: true,
@@ -44,6 +46,17 @@ export const getMe = asyncHandler(async (req, res) => {
     ? await Organization.findById(req.user.organizationId).lean()
     : null;
   return ApiResponse.ok(res, "Profile", { user: req.user, organization });
+});
+
+export const updateMe = asyncHandler(async (req, res) => {
+  const { name, phone } = req.body;
+  const updated = await User.findByIdAndUpdate(
+    req.user._id,
+    { ...(name && { name }), ...(phone !== undefined && { phone }) },
+    { new: true, runValidators: true }
+  ).select("-password -refreshTokens");
+  if (!updated) throw ApiError.notFound("User not found");
+  return ApiResponse.ok(res, "Profile updated", { user: updated });
 });
 
 export const forgotPassword = asyncHandler(async (req, res) => {

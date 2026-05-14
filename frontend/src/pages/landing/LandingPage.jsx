@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   BarChart3, Package, FileText, Users, Zap, Shield,
-  Store, ChevronRight, Check, ArrowRight,
+  Store, ChevronRight, Check, ArrowRight, ShoppingCart,
   Smartphone, Globe, TrendingUp, X, Menu,
 } from "lucide-react";
 import { useAuthStore } from "../../stores/authStore.js";
@@ -311,6 +311,12 @@ export default function LandingPage() {
                 className="w-full sm:w-auto px-7 py-3.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-semibold rounded-xl border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500 transition-colors flex items-center justify-center gap-2 text-base"
               >
                 <Store size={17} /> Store Login
+              </Link>
+              <Link
+                to="/shop"
+                className="w-full sm:w-auto px-7 py-3.5 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 text-base"
+              >
+                <ShoppingCart size={17} /> Shop All Stores
               </Link>
             </div>
 

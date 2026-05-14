@@ -29,6 +29,7 @@ import sfOrderRoutes      from "./modules/storefrontOrder/storefrontOrder.routes
 import couponRoutes        from "./modules/coupon/coupon.routes.js";
 import planRoutes          from "./modules/plan/plan.routes.js";
 import subscriptionRoutes  from "./modules/subscription/subscription.routes.js";
+import shopRoutes          from "./modules/shop/shop.routes.js";
 
 const app = express();
 
@@ -88,6 +89,7 @@ app.use("/api/v1/storefront-orders", sfOrderRoutes);
 app.use("/api/v1/coupons",       couponRoutes);
 app.use("/api/v1/plans",         planRoutes);
 app.use("/api/v1/subscriptions", subscriptionRoutes);
+app.use("/api/v1/shop",          shopRoutes);
 
 // ── Error handling ────────────────────────────────────────────────────────────
 app.use(notFound);

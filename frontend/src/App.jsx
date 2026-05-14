@@ -7,6 +7,7 @@ import { ProtectedRoute, PublicRoute } from "./components/RouteGuards.jsx";
 import Layout from "./components/Layout/Layout.jsx";
 import { useAuthStore } from "./stores/authStore.js";
 import { authApi } from "./api/index.js";
+import { isElectron } from "./utils/platform.js";
 
 import LoginPage from "./pages/auth/LoginPage.jsx";
 import RegisterPage from "./pages/auth/RegisterPage.jsx";
@@ -39,6 +40,21 @@ import SubscriptionsAdminPage from "./pages/settings/SubscriptionsAdminPage.jsx"
 import FeatureGate from "./components/ui/FeatureGate.jsx";
 import LandingPage from "./pages/landing/LandingPage.jsx";
 
+// Shop (marketplace) pages
+import ShopLayout from "./pages/shop/ShopLayout.jsx";
+import ShopHomePage from "./pages/shop/ShopHomePage.jsx";
+import ShopLoginPage from "./pages/shop/ShopLoginPage.jsx";
+import ShopRegisterPage from "./pages/shop/ShopRegisterPage.jsx";
+import ShopStorePage from "./pages/shop/ShopStorePage.jsx";
+import ShopCartPage from "./pages/shop/ShopCartPage.jsx";
+import ShopCheckoutPage from "./pages/shop/ShopCheckoutPage.jsx";
+import ShopOrderConfirmPage from "./pages/shop/ShopOrderConfirmPage.jsx";
+import ShopAccountPage from "./pages/shop/ShopAccountPage.jsx";
+
+// Role-specific profile pages
+import StoreOwnerProfile from "./pages/profile/StoreOwnerProfile.jsx";
+import SuperAdminProfile from "./pages/profile/SuperAdminProfile.jsx";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { staleTime: 5 * 60 * 1000, gcTime: 10 * 60 * 1000, retry: 1, refetchOnWindowFocus: false },
@@ -60,6 +76,18 @@ function SessionRestorer() {
   return null;
 }
 
+function ProfileRoute() {
+  const isSuperAdmin = useAuthStore(s => s.isSuperAdmin());
+  return isSuperAdmin ? <SuperAdminProfile /> : <StoreOwnerProfile />;
+}
+
+function SubscriptionRoute() {
+  const isSuperAdmin = useAuthStore(s => s.isSuperAdmin());
+  return isSuperAdmin ? <Navigate to="/subscriptions" replace /> : <SubscriptionPage />;
+}
+
+const electron = isElectron();
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -69,7 +97,7 @@ export default function App() {
         <Routes>
           <Route element={<PublicRoute />}>
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
+            {!electron && <Route path="/register" element={<RegisterPage />} />}
           </Route>
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
@@ -84,7 +112,8 @@ export default function App() {
               <Route path="/invoices" element={<FeatureGate feature="gst_invoice"><InvoicesPage /></FeatureGate>} />
               <Route path="/reports" element={<FeatureGate feature="data_export"><ReportsPage /></FeatureGate>} />
               <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/settings/subscription" element={<SubscriptionPage />} />
+              <Route path="/settings/subscription" element={<SubscriptionRoute />} />
+              <Route path="/profile" element={<ProfileRoute />} />
             </Route>
           </Route>
           <Route element={<ProtectedRoute adminOnly />}>
@@ -100,18 +129,37 @@ export default function App() {
               <Route path="/subscriptions" element={<SubscriptionsAdminPage />} />
             </Route>
           </Route>
-          {/* Public storefront — no auth required */}
-          <Route path="/store/:slug" element={<StorefrontLayout />}>
-            <Route index element={<StorefrontHomePage />} />
-            <Route path="products" element={<StorePage />} />
-            <Route path="cart" element={<CartPage />} />
-            <Route path="checkout" element={<CheckoutPage />} />
-            <Route path="order/:orderId" element={<OrderConfirmPage />} />
-            <Route path="login" element={<CustomerLoginPage />} />
-            <Route path="register" element={<CustomerRegisterPage />} />
-            <Route path="account" element={<CustomerAccountPage />} />
-          </Route>
-          <Route path="/" element={<LandingPage />} />
+
+          {/* Public per-store storefront — unchanged, kept for direct store links */}
+          {!electron && (
+            <Route path="/store/:slug" element={<StorefrontLayout />}>
+              <Route index element={<StorefrontHomePage />} />
+              <Route path="products" element={<StorePage />} />
+              <Route path="cart" element={<CartPage />} />
+              <Route path="checkout" element={<CheckoutPage />} />
+              <Route path="order/:orderId" element={<OrderConfirmPage />} />
+              <Route path="login" element={<CustomerLoginPage />} />
+              <Route path="register" element={<CustomerRegisterPage />} />
+              <Route path="account" element={<CustomerAccountPage />} />
+            </Route>
+          )}
+
+          {/* Multi-store marketplace */}
+          {!electron && (
+            <Route path="/shop" element={<ShopLayout />}>
+              <Route index element={<ShopHomePage />} />
+              <Route path="login" element={<ShopLoginPage />} />
+              <Route path="register" element={<ShopRegisterPage />} />
+              <Route path="account" element={<ShopAccountPage />} />
+              <Route path="cart" element={<ShopCartPage />} />
+              <Route path="store/:slug" element={<ShopStorePage />} />
+              <Route path="store/:slug/checkout" element={<ShopCheckoutPage />} />
+              <Route path="store/:slug/order/:orderId" element={<ShopOrderConfirmPage />} />
+            </Route>
+          )}
+
+          {/* Root: landing page on web, redirect to login on desktop */}
+          <Route path="/" element={electron ? <Navigate to="/login" replace /> : <LandingPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

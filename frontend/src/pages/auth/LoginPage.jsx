@@ -3,9 +3,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Eye, EyeOff, Store } from "lucide-react";
+import { Eye, EyeOff, Store, Monitor } from "lucide-react";
 import { useAuthStore } from "../../stores/authStore.js";
-import { authApi } from "../../api/index.js";
+import { authApi, subscriptionApi } from "../../api/index.js";
+import { isElectron } from "../../utils/platform.js";
 import toast from "react-hot-toast";
 
 const schema = z.object({
@@ -13,11 +14,13 @@ const schema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
+const electron = isElectron();
+
 export default function LoginPage() {
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
   const [storeCode, setStoreCode] = useState("");
-  const { setAuth } = useAuthStore();
+  const { setAuth, clearAuth } = useAuthStore();
   const nav = useNavigate();
   const { register, handleSubmit, formState: { errors } } = useForm({ mode: "onChange", resolver: zodResolver(schema) });
 
@@ -26,6 +29,26 @@ export default function LoginPage() {
     try {
       const res = await authApi.login(data);
       setAuth({ user: res.data.user, organization: res.data.organization, accessToken: res.data.accessToken });
+
+      // Desktop: enforce Pro + offline_management subscription
+      if (electron) {
+        try {
+          const sub = await subscriptionApi.getMy();
+          const features = sub.data?.featureKeys || [];
+          if (!features.includes("offline_management")) {
+            await authApi.logout({}).catch(() => {});
+            clearAuth();
+            toast.error("Pro plan with Offline Management is required for desktop access.");
+            return;
+          }
+        } catch {
+          await authApi.logout({}).catch(() => {});
+          clearAuth();
+          toast.error("Could not verify subscription. Please try again.");
+          return;
+        }
+      }
+
       toast.success(`Welcome back, ${res.data.user.name}!`);
       nav("/dashboard", { replace: true });
     } catch (err) {
@@ -73,10 +96,18 @@ export default function LoginPage() {
             <span className="font-bold text-gray-900 text-lg">StockKart</span>
           </div>
 
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 tracking-tight">Sign in</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-8">
-            New here? <Link to="/register" className="text-primary-600 font-medium hover:underline">Create a free account</Link>
-          </p>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
+            {electron ? "Store Owner Sign in" : "Sign in"}
+          </h1>
+          {electron ? (
+            <p className="text-sm text-amber-600 dark:text-amber-400 mt-1 mb-8 flex items-center gap-1.5">
+              <Monitor size={13} /> Desktop — Pro plan required
+            </p>
+          ) : (
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-8">
+              New here? <Link to="/register" className="text-primary-600 font-medium hover:underline">Create a free account</Link>
+            </p>
+          )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
@@ -118,28 +149,30 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-1.5">
-              <Store size={13} /> Customer? Access your store portal
-            </p>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Enter store code (e.g. my-store)"
-                value={storeCode}
-                onChange={e => setStoreCode(e.target.value.trim().toLowerCase())}
-                className="flex-1 px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400"
-              />
-              <button
-                type="button"
-                disabled={!storeCode}
-                onClick={() => nav(`/store/${storeCode}/login`)}
-                className="px-4 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-40 transition-colors whitespace-nowrap"
-              >
-                Go
-              </button>
+          {!electron && (
+            <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-1.5">
+                <Store size={13} /> Customer? Access your store portal
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Enter store code (e.g. my-store)"
+                  value={storeCode}
+                  onChange={e => setStoreCode(e.target.value.trim().toLowerCase())}
+                  className="flex-1 px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400"
+                />
+                <button
+                  type="button"
+                  disabled={!storeCode}
+                  onClick={() => nav(`/store/${storeCode}/login`)}
+                  className="px-4 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-40 transition-colors whitespace-nowrap"
+                >
+                  Go
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

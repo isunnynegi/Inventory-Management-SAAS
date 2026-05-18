@@ -46,6 +46,8 @@ export const productApi = {
   update: (id, d) => api.put(`/products/${id}`, d).then(r),
   delete: id => api.delete(`/products/${id}`).then(r),
   lowStock: () => api.get("/products/low-stock").then(r),
+  exportAll: () => api.get("/products/export", { responseType: "blob" }),
+  importCSV: (formData) => api.post("/products/import", formData, { headers: { "Content-Type": "multipart/form-data" } }).then(r),
 };
 export const supplierApi = {
   list: p => api.get("/suppliers", { params: p }).then(r),

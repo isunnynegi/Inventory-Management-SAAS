@@ -1,10 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { productApi, categoryApi } from "../../api/index.js";
 import { useAuthStore } from "../../stores/authStore.js";
 import AddProductDrawer from "../../components/inventory/AddProductDrawer.jsx";
 import { SearchableSelect } from "../../components/ui/index.jsx";
-import { Search, Upload, Download, Plus, LayoutList, LayoutGrid, Pencil, Trash2, AlertTriangle } from "lucide-react";
+import { Search, Upload, Download, Plus, LayoutList, LayoutGrid, Pencil, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 // ─── helpers ───────────────────────────────────────────────────
@@ -86,12 +86,50 @@ export default function ProductsPage() {
   const totalDocs = data?.meta?.totalDocs || 0;
   const totalPages = data?.meta?.totalPages || 1;
 
+  const importRef = useRef(null);
+  const [importing, setImporting] = useState(false);
+
   const openAdd = () => { setEditProduct(null); setDrawerOpen(true); };
   const openEdit = (p) => { setEditProduct(p); setDrawerOpen(true); };
 
   const handleDelete = (p) => {
     if (!window.confirm(`Delete "${p.name}"?`)) return;
     deleteMutation.mutate(p.id);
+  };
+
+  const handleExport = async () => {
+    try {
+      const res = await productApi.exportAll();
+      const url = URL.createObjectURL(new Blob([res.data], { type: "text/csv" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `products-${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Export failed");
+    }
+  };
+
+  const handleImportFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    if (!file.name.endsWith(".csv")) { toast.error("Please upload a CSV file"); return; }
+    const formData = new FormData();
+    formData.append("file", file);
+    setImporting(true);
+    try {
+      const res = await productApi.importCSV(formData);
+      const { created, skipped, errors } = res.data;
+      toast.success(`Imported ${created} products${skipped ? `, ${skipped} skipped` : ""}`);
+      if (errors?.length) toast.error(`${errors.length} row(s) failed`);
+      qc.invalidateQueries({ queryKey: ["products"] });
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Import failed");
+    } finally {
+      setImporting(false);
+    }
   };
 
   return (
@@ -106,11 +144,19 @@ export default function ProductsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <button className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-50 transition-colors">
-              <Upload size={14} /> Import XLS
-            </button>
-            <button className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-50 transition-colors">
-              <Download size={14} /> Export
+            <input ref={importRef} type="file" accept=".csv" className="hidden" onChange={handleImportFile} />
+            {isAdmin() && (
+              <button
+                onClick={() => importRef.current?.click()}
+                disabled={importing}
+                className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">
+                <Upload size={14} /> {importing ? "Importing…" : "Import CSV"}
+              </button>
+            )}
+            <button
+              onClick={handleExport}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              <Download size={14} /> Export CSV
             </button>
             {isAdmin() && (
               <button onClick={openAdd}

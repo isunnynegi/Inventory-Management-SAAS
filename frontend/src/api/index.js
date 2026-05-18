@@ -31,6 +31,7 @@ export const platformApi = {
   deleteOrg: (id) => api.delete(`/organizations/${id}`).then(r),
   forceDeleteOrg: (id) => api.delete(`/organizations/${id}/force`).then(r),
   impersonate: (id) => api.post(`/organizations/${id}/impersonate`).then(r),
+  storeReport: (id) => api.get(`/organizations/${id}/report`).then(r),
 };
 export const categoryApi = {
   list: p => api.get("/categories", { params: p }).then(r),

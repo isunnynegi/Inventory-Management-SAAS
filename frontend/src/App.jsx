@@ -24,6 +24,7 @@ import ReportsPage from "./pages/reports/ReportsPage.jsx";
 import UsersPage from "./pages/users/UsersPage.jsx";
 import SettingsPage from "./pages/settings/SettingsPage.jsx";
 import OrganizationsPage from "./pages/organizations/OrganizationsPage.jsx";
+import StoreReportPage from "./pages/organizations/StoreReportPage.jsx";
 import StorefrontOrdersPage from "./pages/storefrontOrders/StorefrontOrdersPage.jsx";
 import StorefrontLayout from "./pages/store/StorefrontLayout.jsx";
 import StorePage from "./pages/store/StorePage.jsx";
@@ -126,6 +127,7 @@ export default function App() {
           <Route element={<ProtectedRoute superAdminOnly />}>
             <Route element={<Layout />}>
               <Route path="/organizations" element={<OrganizationsPage />} />
+              <Route path="/organizations/:id/report" element={<StoreReportPage />} />
               <Route path="/subscriptions" element={<SubscriptionsAdminPage />} />
             </Route>
           </Route>

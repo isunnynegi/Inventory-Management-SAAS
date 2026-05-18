@@ -14,6 +14,7 @@ import Invoice from "../invoice/invoice.model.js";
 import { Router } from "express";
 import { authenticate, authorize } from "../../middleware/auth.js";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 export const getMine = asyncHandler(async (req, res) => {
   const org = await Organization.findById(req.organizationId).lean();
@@ -180,6 +181,99 @@ router.delete("/:id/force", authorize("superAdmin"), asyncHandler(async (req, re
   ]);
 
   return ApiResponse.ok(res, "Organization permanently deleted");
+}));
+
+// SuperAdmin — store-level report
+router.get("/:id/report", authorize("superAdmin"), asyncHandler(async (req, res) => {
+  const rawId = req.params.id;
+  if (!mongoose.Types.ObjectId.isValid(rawId)) throw ApiError.badRequest("Invalid organization id");
+  const orgId = new mongoose.Types.ObjectId(rawId);
+
+  const org = await Organization.findOne({ _id: orgId }).lean();
+  if (!org) throw ApiError.notFound("Organization not found");
+
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+
+  const [
+    totalProducts, lowStockProducts, totalCategories, totalCustomers, totalSuppliers,
+    monthlySales, monthlyPurchases, todaySales, todayPurchases,
+    recentSales, recentPurchases, lowStockList,
+    monthlySalesChart,
+    lastSale, lastPurchase, lastStockAdj,
+    totalSalesAllTime,
+  ] = await Promise.all([
+    Product.countDocuments({ organizationId: orgId }),
+    Product.countDocuments({ organizationId: orgId, $expr: { $lte: ["$stock", "$reorderLevel"] } }),
+    Category.countDocuments({ organizationId: orgId }),
+    Customer.countDocuments({ organizationId: orgId }),
+    Supplier.countDocuments({ organizationId: orgId }),
+
+    Sale.aggregate([
+      { $match: { organizationId: orgId, isDeleted: false, date: { $gte: startOfMonth } } },
+      { $group: { _id: null, total: { $sum: "$totalAmount" }, count: { $sum: 1 } } },
+    ]),
+    Purchase.aggregate([
+      { $match: { organizationId: orgId, isDeleted: false, date: { $gte: startOfMonth } } },
+      { $group: { _id: null, total: { $sum: "$totalAmount" }, count: { $sum: 1 } } },
+    ]),
+    Sale.aggregate([
+      { $match: { organizationId: orgId, isDeleted: false, date: { $gte: startOfToday } } },
+      { $group: { _id: null, total: { $sum: "$totalAmount" }, count: { $sum: 1 } } },
+    ]),
+    Purchase.aggregate([
+      { $match: { organizationId: orgId, isDeleted: false, date: { $gte: startOfToday } } },
+      { $group: { _id: null, total: { $sum: "$totalAmount" }, count: { $sum: 1 } } },
+    ]),
+
+    Sale.find({ organizationId: orgId, isDeleted: false }).sort({ date: -1 }).limit(5).lean(),
+    Purchase.find({ organizationId: orgId, isDeleted: false }).sort({ date: -1 }).limit(5).lean(),
+    Product.find({ organizationId: orgId, $expr: { $lte: ["$stock", "$reorderLevel"] } })
+      .populate("categoryId", "name").select("name sku stock reorderLevel unit").limit(10).lean(),
+
+    Sale.aggregate([
+      { $match: { organizationId: orgId, isDeleted: false, date: { $gte: sixMonthsAgo } } },
+      { $group: { _id: { year: { $year: "$date" }, month: { $month: "$date" } }, total: { $sum: "$totalAmount" }, count: { $sum: 1 } } },
+      { $sort: { "_id.year": 1, "_id.month": 1 } },
+    ]),
+
+    Sale.findOne({ organizationId: orgId, isDeleted: false }).sort({ date: -1 }).select("date").lean(),
+    Purchase.findOne({ organizationId: orgId, isDeleted: false }).sort({ date: -1 }).select("date").lean(),
+    StockAdjustment.findOne({ organizationId: orgId, isDeleted: false }).sort({ createdAt: -1 }).select("createdAt").lean(),
+
+    Sale.aggregate([
+      { $match: { organizationId: orgId, isDeleted: false } },
+      { $group: { _id: null, total: { $sum: "$totalAmount" }, count: { $sum: 1 } } },
+    ]),
+  ]);
+
+  const activityDates = [
+    lastSale?.date, lastPurchase?.date, lastStockAdj?.createdAt,
+  ].filter(Boolean);
+  const lastActivity = activityDates.length > 0 ? new Date(Math.max(...activityDates.map(d => new Date(d).getTime()))) : null;
+
+  return ApiResponse.ok(res, "Store report", {
+    organization: org,
+    kpis: {
+      totalProducts,
+      lowStockProducts,
+      totalCategories,
+      totalCustomers,
+      totalSuppliers,
+      monthlySales: { total: monthlySales[0]?.total || 0, count: monthlySales[0]?.count || 0 },
+      monthlyPurchases: { total: monthlyPurchases[0]?.total || 0, count: monthlyPurchases[0]?.count || 0 },
+      todaySales: { total: todaySales[0]?.total || 0, count: todaySales[0]?.count || 0 },
+      todayPurchases: { total: todayPurchases[0]?.total || 0, count: todayPurchases[0]?.count || 0 },
+      totalSalesAllTime: { total: totalSalesAllTime[0]?.total || 0, count: totalSalesAllTime[0]?.count || 0 },
+    },
+    lastActivity,
+    recentSales,
+    recentPurchases,
+    lowStockList,
+    monthlySalesChart,
+  });
 }));
 
 // Store admin/staff routes

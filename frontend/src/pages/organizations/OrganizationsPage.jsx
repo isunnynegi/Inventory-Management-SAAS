@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { platformApi, orgApi } from "../../api/index.js";
 import { Card, Badge, Spinner, Modal, Button, SearchableSelect } from "../../components/ui/index.jsx";
-import { Search, Building2, ToggleLeft, ToggleRight, Trash2, Trash, UserCheck, AlertTriangle } from "lucide-react";
+import { Search, Building2, ToggleLeft, ToggleRight, Trash2, Trash, UserCheck, AlertTriangle, BarChart3 } from "lucide-react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../stores/authStore.js";
@@ -208,6 +208,13 @@ export default function OrganizationsPage() {
                       <td className="py-3 px-4 text-gray-400 dark:text-gray-500 text-xs">{format(new Date(org.createdAt), "dd MMM yyyy")}</td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => nav(`/organizations/${org._id}/report`)}
+                            title="View store report"
+                            className="p-1.5 rounded-lg text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors"
+                          >
+                            <BarChart3 size={16} />
+                          </button>
                           {!org.isDeleted && (
                             <>
                               <button

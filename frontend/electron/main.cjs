@@ -269,10 +269,15 @@ app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) createMainWindow(false);
 });
 
-// Graceful shutdown — kill mongod before quit
-app.on("before-quit", () => {
-  if (mongodProcess) {
-    mongodProcess.kill("SIGTERM");
-    setTimeout(() => { try { mongodProcess.kill("SIGKILL"); } catch {} }, 3000);
-  }
+// Graceful shutdown — prevent quit until mongod exits (or 3s timeout)
+app.on("before-quit", (e) => {
+  if (!mongodProcess) return;
+  e.preventDefault();
+  const proc = mongodProcess;
+  mongodProcess = null;
+  const done = () => app.exit(0);
+  if (proc.exitCode !== null) { done(); return; }
+  proc.once("exit", done);
+  try { proc.kill(); } catch {}
+  setTimeout(done, 3000);
 });

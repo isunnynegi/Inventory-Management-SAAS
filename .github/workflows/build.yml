@@ -87,6 +87,7 @@ jobs:
           Invoke-WebRequest -Uri $url -OutFile "mongodb.zip" -TimeoutSec 600
           Expand-Archive -Path "mongodb.zip" -DestinationPath "mongodb-tmp"
           $exe = Get-ChildItem -Path "mongodb-tmp" -Recurse -Filter "mongod.exe" | Select-Object -First 1
+          New-Item -ItemType Directory -Force -Path "frontend\resources" | Out-Null
           Copy-Item $exe.FullName -Destination "frontend\resources\mongod.exe"
           Remove-Item "mongodb.zip", "mongodb-tmp" -Recurse -Force
           Write-Host "mongod.exe placed at frontend\resources\mongod.exe"

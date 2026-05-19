@@ -5,7 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Eye, EyeOff, Store, Monitor } from "lucide-react";
 import { useAuthStore } from "../../stores/authStore.js";
-import { authApi, subscriptionApi } from "../../api/index.js";
+import { authApi } from "../../api/index.js";
 import { isElectron } from "../../utils/platform.js";
 import toast from "react-hot-toast";
 
@@ -20,7 +20,7 @@ export default function LoginPage() {
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
   const [storeCode, setStoreCode] = useState("");
-  const { setAuth, clearAuth } = useAuthStore();
+  const { setAuth } = useAuthStore();
   const nav = useNavigate();
   const { register, handleSubmit, formState: { errors } } = useForm({ mode: "onChange", resolver: zodResolver(schema) });
 
@@ -29,25 +29,6 @@ export default function LoginPage() {
     try {
       const res = await authApi.login(data);
       setAuth({ user: res.data.user, organization: res.data.organization, accessToken: res.data.accessToken });
-
-      // Desktop: enforce Pro + offline_management subscription
-      if (electron) {
-        try {
-          const sub = await subscriptionApi.getMy();
-          const features = sub.data?.featureKeys || [];
-          if (!features.includes("offline_management")) {
-            await authApi.logout({}).catch(() => {});
-            clearAuth();
-            toast.error("Pro plan with Offline Management is required for desktop access.");
-            return;
-          }
-        } catch {
-          await authApi.logout({}).catch(() => {});
-          clearAuth();
-          toast.error("Could not verify subscription. Please try again.");
-          return;
-        }
-      }
 
       toast.success(`Welcome back, ${res.data.user.name}!`);
       nav("/dashboard", { replace: true });
@@ -100,8 +81,8 @@ export default function LoginPage() {
             {electron ? "Store Owner Sign in" : "Sign in"}
           </h1>
           {electron ? (
-            <p className="text-sm text-amber-600 dark:text-amber-400 mt-1 mb-8 flex items-center gap-1.5">
-              <Monitor size={13} /> Desktop — Pro plan required
+            <p className="text-sm text-primary-600 dark:text-primary-400 mt-1 mb-8 flex items-center gap-1.5">
+              <Monitor size={13} /> Desktop — offline mode
             </p>
           ) : (
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-8">

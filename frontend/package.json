@@ -8,9 +8,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-
-    "electron:start": "npm run build && electron .",
-    "electron:dist": "npm run build && electron-builder --win"
+    "electron:start": "vite build --mode electron && electron .",
+    "electron:dist": "vite build --mode electron && electron-builder --win",
+    "electron:prep": "cd ../backend && npm install --production"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.6.0",
@@ -19,6 +19,7 @@
     "axios": "^1.7.2",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
+    "electron-updater": "^6.8.3",
     "lucide-react": "^0.395.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -52,6 +53,24 @@
       "electron/**/*",
       "package.json"
     ],
+    "extraResources": [
+      {
+        "from": "resources/mongod.exe",
+        "to": "mongod.exe"
+      },
+      {
+        "from": "../backend/src",
+        "to": "backend/src"
+      },
+      {
+        "from": "../backend/package.json",
+        "to": "backend/package.json"
+      },
+      {
+        "from": "../backend/node_modules",
+        "to": "backend/node_modules"
+      }
+    ],
     "win": {
       "target": "nsis"
     },
@@ -61,6 +80,11 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "StockKart"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "your-github-username",
+      "repo": "stockkart-releases"
     }
   }
 }

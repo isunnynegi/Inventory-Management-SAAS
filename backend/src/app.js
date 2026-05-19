@@ -30,6 +30,7 @@ import couponRoutes        from "./modules/coupon/coupon.routes.js";
 import planRoutes          from "./modules/plan/plan.routes.js";
 import subscriptionRoutes  from "./modules/subscription/subscription.routes.js";
 import shopRoutes          from "./modules/shop/shop.routes.js";
+import setupRoutes         from "./modules/setup/setup.routes.js";
 
 const app = express();
 
@@ -37,8 +38,9 @@ const app = express();
 app.use(helmet({ crossOriginEmbedderPolicy: false, contentSecurityPolicy: false }));
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:5173").split(",").map(s => s.trim());
+const allowAll = allowedOrigins.includes("*");
 app.use(cors({
-  origin: (origin, cb) => (!origin || allowedOrigins.includes(origin)) ? cb(null, true) : cb(new Error(`CORS: ${origin} not allowed`)),
+  origin: (origin, cb) => (!origin || allowAll || allowedOrigins.includes(origin)) ? cb(null, true) : cb(new Error(`CORS: ${origin} not allowed`)),
   credentials: true,
   methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
   allowedHeaders: ["Content-Type","Authorization"],
@@ -90,6 +92,7 @@ app.use("/api/v1/coupons",       couponRoutes);
 app.use("/api/v1/plans",         planRoutes);
 app.use("/api/v1/subscriptions", subscriptionRoutes);
 app.use("/api/v1/shop",          shopRoutes);
+app.use("/api/v1/setup",         setupRoutes);
 
 // ── Error handling ────────────────────────────────────────────────────────────
 app.use(notFound);

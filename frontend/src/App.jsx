@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Toaster } from "react-hot-toast";
@@ -6,11 +6,13 @@ import { useEffect } from "react";
 import { ProtectedRoute, PublicRoute } from "./components/RouteGuards.jsx";
 import Layout from "./components/Layout/Layout.jsx";
 import { useAuthStore } from "./stores/authStore.js";
-import { authApi } from "./api/index.js";
+import { authApi, setupApi } from "./api/index.js";
 import { isElectron } from "./utils/platform.js";
 
 import LoginPage from "./pages/auth/LoginPage.jsx";
 import RegisterPage from "./pages/auth/RegisterPage.jsx";
+import SetupPage from "./pages/auth/SetupPage.jsx";
+import MigratePage from "./pages/auth/MigratePage.jsx";
 import DashboardPage from "./pages/dashboard/DashboardPage.jsx";
 import CategoriesPage from "./pages/categories/CategoriesPage.jsx";
 import ProductsPage from "./pages/products/ProductsPage.jsx";
@@ -77,6 +79,21 @@ function SessionRestorer() {
   return null;
 }
 
+// Redirects to /setup on first launch if no store is configured yet
+function ElectronStartup() {
+  const nav = useNavigate();
+  useEffect(() => {
+    if (!isElectron()) return;
+    // main.cjs sets this global before ready-to-show
+    if (window.__SK_NEEDS_SETUP__) { nav("/setup", { replace: true }); return; }
+    // Fallback: ask the API (handles cases where the global wasn't set in time)
+    setupApi.status().then(res => {
+      if (res.data?.needsSetup) nav("/setup", { replace: true });
+    }).catch(() => {});
+  }, []);
+  return null;
+}
+
 function ProfileRoute() {
   const isSuperAdmin = useAuthStore(s => s.isSuperAdmin());
   return isSuperAdmin ? <SuperAdminProfile /> : <StoreOwnerProfile />;
@@ -94,8 +111,13 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <SessionRestorer />
+        <ElectronStartup />
         <Toaster position="top-right" toastOptions={{ duration: 4000, style: { borderRadius: "12px", fontSize: "14px" } }} />
         <Routes>
+          {/* Electron-only first-run pages — no auth required */}
+          {electron && <Route path="/setup"   element={<SetupPage />} />}
+          {electron && <Route path="/migrate" element={<MigratePage />} />}
+
           <Route element={<PublicRoute />}>
             <Route path="/login" element={<LoginPage />} />
             {!electron && <Route path="/register" element={<RegisterPage />} />}

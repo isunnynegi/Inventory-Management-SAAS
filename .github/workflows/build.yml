@@ -120,8 +120,8 @@ jobs:
             - Offline-first: works without internet after first setup
             - Auto-update: the app checks for new releases on launch
           files: |
-            frontend/release/**/*.exe
-            frontend/release/**/*.exe.blockmap
+            frontend/release/*.exe
+            frontend/release/*.exe.blockmap
             frontend/release/latest.yml
           generate_release_notes: true
           make_latest: true

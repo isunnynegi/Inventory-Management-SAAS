@@ -7,8 +7,11 @@ import { useAuthStore } from "../../stores/authStore.js";
 import { authApi, orgApi } from "../../api/index.js";
 import toast from "react-hot-toast";
 import { useState } from "react";
-import { Eye, EyeOff, Store } from "lucide-react";
+import { Eye, EyeOff, Store, Monitor } from "lucide-react";
 import { SearchableSelect } from "../../components/ui/index.jsx";
+import { isElectron } from "../../utils/platform.js";
+
+const electron = isElectron();
 
 const schema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -79,9 +82,17 @@ export default function RegisterPage() {
           <span className="font-bold text-gray-900 dark:text-gray-100 text-lg">StockKart</span>
         </div>
 
+        {electron && (
+          <p className="text-sm text-primary-600 dark:text-primary-400 mb-4 flex items-center gap-1.5">
+            <Monitor size={13} /> Desktop — offline mode
+          </p>
+        )}
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 tracking-tight">Create your account</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-8">
-          Already registered? <Link to="/login" className="text-primary-600 font-medium hover:underline">Sign in</Link>
+          Already registered?{" "}
+          <Link to={electron ? "/welcome" : "/login"} className="text-primary-600 font-medium hover:underline">
+            {electron ? "Go back" : "Sign in"}
+          </Link>
         </p>
 
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-7 shadow-sm">
@@ -147,28 +158,30 @@ export default function RegisterPage() {
 
         <p className="text-center text-xs text-gray-400 mt-4">No credit card required · 14-day free trial</p>
 
-        <div className="mt-6 pt-5 border-t border-gray-200 dark:border-gray-700">
-          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-1.5">
-            <Store size={13} /> Customer? Register with your store
-          </p>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Enter store code (e.g. my-store)"
-              value={storeCode}
-              onChange={e => setStoreCode(e.target.value.trim().toLowerCase())}
-              className="flex-1 px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400"
-            />
-            <button
-              type="button"
-              disabled={!storeCode}
-              onClick={() => nav(`/store/${storeCode}/register`)}
-              className="px-4 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-40 transition-colors whitespace-nowrap"
-            >
-              Go
-            </button>
+        {!electron && (
+          <div className="mt-6 pt-5 border-t border-gray-200 dark:border-gray-700">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-1.5">
+              <Store size={13} /> Customer? Register with your store
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Enter store code (e.g. my-store)"
+                value={storeCode}
+                onChange={e => setStoreCode(e.target.value.trim().toLowerCase())}
+                className="flex-1 px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400"
+              />
+              <button
+                type="button"
+                disabled={!storeCode}
+                onClick={() => nav(`/store/${storeCode}/register`)}
+                className="px-4 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-40 transition-colors whitespace-nowrap"
+              >
+                Go
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

@@ -80,15 +80,19 @@ export default function LoginPage() {
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
             {electron ? "Store Owner Sign in" : "Sign in"}
           </h1>
-          {electron ? (
-            <p className="text-sm text-primary-600 dark:text-primary-400 mt-1 mb-8 flex items-center gap-1.5">
-              <Monitor size={13} /> Desktop — offline mode
-            </p>
-          ) : (
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-8">
-              New here? <Link to="/register" className="text-primary-600 font-medium hover:underline">Create a free account</Link>
-            </p>
-          )}
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-8 flex items-center gap-1.5">
+            {electron ? (
+              <>
+                <Monitor size={13} className="text-primary-600 dark:text-primary-400 flex-shrink-0" />
+                <span>
+                  New here?{" "}
+                  <Link to="/welcome" className="text-primary-600 font-medium hover:underline">Register instead</Link>
+                </span>
+              </>
+            ) : (
+              <>New here? <Link to="/register" className="text-primary-600 font-medium hover:underline">Create a free account</Link></>
+            )}
+          </p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>

@@ -13,6 +13,7 @@ import LoginPage from "./pages/auth/LoginPage.jsx";
 import RegisterPage from "./pages/auth/RegisterPage.jsx";
 import SetupPage from "./pages/auth/SetupPage.jsx";
 import MigratePage from "./pages/auth/MigratePage.jsx";
+import WelcomePage from "./pages/auth/WelcomePage.jsx";
 import DashboardPage from "./pages/dashboard/DashboardPage.jsx";
 import CategoriesPage from "./pages/categories/CategoriesPage.jsx";
 import ProductsPage from "./pages/products/ProductsPage.jsx";
@@ -117,10 +118,11 @@ export default function App() {
           {/* Electron-only first-run pages — no auth required */}
           {electron && <Route path="/setup"   element={<SetupPage />} />}
           {electron && <Route path="/migrate" element={<MigratePage />} />}
+          {electron && <Route path="/welcome" element={<WelcomePage />} />}
 
           <Route element={<PublicRoute />}>
             <Route path="/login" element={<LoginPage />} />
-            {!electron && <Route path="/register" element={<RegisterPage />} />}
+            <Route path="/register" element={<RegisterPage />} />
           </Route>
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
@@ -182,8 +184,8 @@ export default function App() {
             </Route>
           )}
 
-          {/* Root: landing page on web, redirect to login on desktop */}
-          <Route path="/" element={electron ? <Navigate to="/login" replace /> : <LandingPage />} />
+          {/* Root: landing page on web, welcome choice on desktop */}
+          <Route path="/" element={electron ? <Navigate to="/welcome" replace /> : <LandingPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

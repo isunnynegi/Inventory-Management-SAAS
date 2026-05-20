@@ -172,18 +172,9 @@ async function startApp() {
   await pollUntil(() => isBackendReady(), 500, 60)
     .catch(err => console.error("Backend timeout:", err.message));
 
-  // 3 ── Check first-run setup ───────────────────────────────────────────────
-  setLoading("Almost ready…", 85);
-  let needsSetup = false;
-  try {
-    const r = await fetch("http://127.0.0.1:5000/api/v1/setup/status");
-    const j = await r.json();
-    needsSetup = j.data?.needsSetup === true;
-  } catch {}
-
-  // 4 ── Show main window ────────────────────────────────────────────────────
+  // 3 ── Show main window (SetupGuard in React handles first-run redirect) ──
   setLoading("Opening StockKart…", 100);
-  createMainWindow(needsSetup);
+  createMainWindow();
 }
 
 // ── Main window ──────────────────────────────────────────────────────────────
@@ -196,7 +187,7 @@ const MIME = {
   ".json": "application/json", ".webp": "image/webp",
 };
 
-function createMainWindow(needsSetup) {
+function createMainWindow() {
   mainWindow = new BrowserWindow({
     width: 1280, height: 800, minWidth: 1024, minHeight: 600,
     autoHideMenuBar: true,
@@ -216,10 +207,6 @@ function createMainWindow(needsSetup) {
     if (loadingWindow && !loadingWindow.isDestroyed()) {
       loadingWindow.close();
       loadingWindow = null;
-    }
-    // Signal the React app whether first-run setup is needed
-    if (needsSetup) {
-      mainWindow.webContents.executeJavaScript("window.__SK_NEEDS_SETUP__=true").catch(() => {});
     }
   });
 
@@ -266,7 +253,7 @@ app.on("window-all-closed", () => {
 });
 
 app.on("activate", () => {
-  if (BrowserWindow.getAllWindows().length === 0) createMainWindow(false);
+  if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
 });
 
 // Graceful shutdown — prevent quit until mongod exits (or 3s timeout)

@@ -286,7 +286,7 @@ export default function SetupPage() {
           </div>
         </div>
 
-        <p className="text-primary-200 text-xs">© 2026 StockKart — Desktop Edition</p>
+        <p className="text-primary-200 text-xs">© 2026 StockKart</p>
       </div>
 
       {/* ── Right — form area ── */}

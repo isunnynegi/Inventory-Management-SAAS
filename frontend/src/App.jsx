@@ -80,14 +80,10 @@ function SessionRestorer() {
   return null;
 }
 
-// Redirects to /setup on first launch if no store is configured yet
-function ElectronStartup() {
+// Redirects to /setup on first launch if no store is configured yet (web + Electron)
+function SetupGuard() {
   const nav = useNavigate();
   useEffect(() => {
-    if (!isElectron()) return;
-    // main.cjs sets this global before ready-to-show
-    if (window.__SK_NEEDS_SETUP__) { nav("/setup", { replace: true }); return; }
-    // Fallback: ask the API (handles cases where the global wasn't set in time)
     setupApi.status().then(res => {
       if (res.data?.needsSetup) nav("/setup", { replace: true });
     }).catch(() => {});
@@ -112,11 +108,12 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <SessionRestorer />
-        <ElectronStartup />
+        <SetupGuard />
         <Toaster position="top-right" toastOptions={{ duration: 4000, style: { borderRadius: "12px", fontSize: "14px" } }} />
         <Routes>
-          {/* Electron-only first-run pages — no auth required */}
-          {electron && <Route path="/setup"   element={<SetupPage />} />}
+          {/* First-run setup — no auth required */}
+          <Route path="/setup" element={<SetupPage />} />
+          {/* Electron-only: migrate from cloud */}
           {electron && <Route path="/migrate" element={<MigratePage />} />}
           {electron && <Route path="/welcome" element={<WelcomePage />} />}
 

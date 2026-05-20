@@ -1,6 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { Monitor, LogIn, UserPlus } from "lucide-react";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
+const isLocalBackend = API_URL.includes("localhost") || API_URL.includes("127.0.0.1");
+
 export default function WelcomePage() {
   const nav = useNavigate();
 
@@ -49,9 +52,19 @@ export default function WelcomePage() {
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 tracking-tight mb-2">
             Welcome to StockKart
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-10">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
             Already have an account or setting up for the first time?
           </p>
+
+          {/* API URL badge — helps spot wrong builds immediately */}
+          <div className={`mb-6 px-3 py-2 rounded-lg text-xs font-mono flex items-center gap-2 ${
+            isLocalBackend
+              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400"
+              : "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400"
+          }`}>
+            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isLocalBackend ? "bg-emerald-500" : "bg-red-500"}`} />
+            {API_URL}
+          </div>
 
           <div className="space-y-3">
             <button
@@ -68,7 +81,7 @@ export default function WelcomePage() {
             </button>
 
             <button
-              onClick={() => nav("/register")}
+              onClick={() => nav("/setup")}
               className="w-full flex items-center gap-4 px-5 py-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-gray-750 text-gray-900 dark:text-gray-100 transition-colors group"
             >
               <div className="w-9 h-9 rounded-lg bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0 text-primary-600 dark:text-primary-400">

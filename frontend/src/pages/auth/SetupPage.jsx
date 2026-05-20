@@ -85,10 +85,14 @@ export default function SetupPage() {
   const [allProds,  setAllProds]              = useState([]);
   const [allSups,   setAllSups]               = useState([]);
 
+  const [alreadyConfigured, setAlreadyConfigured] = useState(false);
+
   // redirect if already configured
   useEffect(() => {
     setupApi.status()
-      .then(res => { if (!res.data?.needsSetup) nav("/login", { replace: true }); })
+      .then(res => {
+        if (!res.data?.needsSetup) setAlreadyConfigured(true);
+      })
       .catch(() => {})
       .finally(() => setChecking(false));
   }, []);
@@ -242,6 +246,30 @@ export default function SetupPage() {
   };
 
   if (checking) return null;
+
+  if (alreadyConfigured) {
+    return (
+      <div className="min-h-screen bg-[#fafbfc] dark:bg-gray-950 flex items-center justify-center px-6">
+        <div className="w-full max-w-[400px] text-center">
+          <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-4">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600 dark:text-amber-400">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Store already configured</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            This device already has a store set up. Sign in with your existing account.
+          </p>
+          <button
+            onClick={() => nav("/login", { replace: true })}
+            className="w-full btn-primary py-2.5 text-sm font-semibold"
+          >
+            Go to Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // ── derived display ────────────────────────────────────────────────────────
   const meta    = STEP_META[step - 1];
